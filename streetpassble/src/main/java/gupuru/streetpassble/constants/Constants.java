@@ -1,10 +1,13 @@
 package gupuru.streetpassble.constants;
 
+import gupuru.streetpassble.service.StreetPassService;
+
 public class Constants {
 
     public static final String ACTION_SCAN = "street.pass.action_scan";
     public static final String ACTION_SCAN_ADV_ERROR = "street.pass.scan_adv_error";
     public static final String ACTION_ADV = "street.pass.action_adv";
+    public static final String SERVICE_NAME = StreetPassService.class.getCanonicalName();
 
     public static final String DATA = "data";
     public static final String UUID = "uuid";
