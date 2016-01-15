@@ -6,4 +6,12 @@
   <artifactId>streetpassble</artifactId>
   <version>0.0.1</version>
   <packaging>aar</packaging>
+  <dependencies>
+    <dependency>
+      <groupId>io.realm</groupId>
+      <artifactId>realm-android</artifactId>
+      <version>0.87.0</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
 </project>
