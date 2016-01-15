@@ -7,9 +7,9 @@ uploadArchives {
     repositories {
         mavenDeployer {
             repository url: "file://${repo.absolutePath}"
-            pom.version = '0.0.1'             // version
-            pom.groupId = 'gupuru'    // グループ名
-            pom.artifactId = 'streetpassble' // ライブラリ名
+            pom.version = '0.0.1'
+            pom.groupId = 'gupuru'
+            pom.artifactId = 'streetpassble'
         }
     }
 }

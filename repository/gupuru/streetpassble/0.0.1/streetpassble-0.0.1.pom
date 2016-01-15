@@ -6,12 +6,4 @@
   <artifactId>streetpassble</artifactId>
   <version>0.0.1</version>
   <packaging>aar</packaging>
-  <dependencies>
-    <dependency>
-      <groupId>com.android.support</groupId>
-      <artifactId>appcompat-v7</artifactId>
-      <version>23.1.1</version>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
 </project>
