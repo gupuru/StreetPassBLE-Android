@@ -100,9 +100,15 @@ public class StreetPassBle {
     }
 
     private void unregisterReceiver() {
-        context.unregisterReceiver(scanDataReceiver);
-        context.unregisterReceiver(errorScanAdvReceiver);
-        context.unregisterReceiver(advDataReceiver);
+        if (scanDataReceiver != null) {
+            context.unregisterReceiver(scanDataReceiver);
+        }
+        if (errorScanAdvReceiver != null) {
+            context.unregisterReceiver(errorScanAdvReceiver);
+        }
+        if (advDataReceiver != null) {
+            context.unregisterReceiver(advDataReceiver);
+        }
     }
 
     private class ScanDataReceiver extends BroadcastReceiver {
@@ -160,6 +166,5 @@ public class StreetPassBle {
         }
         return false;
     }
-
 
 }
