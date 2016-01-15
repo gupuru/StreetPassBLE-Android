@@ -1,5 +1,6 @@
 package gupuru.streetpassble;
 
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,7 +8,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 
-import gupuru.streetpassble.application.StreetPassApplication;
+import java.util.List;
+
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
@@ -50,7 +52,7 @@ public class StreetPassBle {
     }
 
     public void start(String uuid) {
-        if (!StreetPassApplication.get().isRunning()) {
+        if (!serviceIsRunning()) {
             registerReceiver();
             Intent intent = new Intent(context,
                     StreetPassService.class);
@@ -60,7 +62,7 @@ public class StreetPassBle {
     }
 
     public void start(String uuid, String data) {
-        if (!StreetPassApplication.get().isRunning()) {
+        if (!serviceIsRunning()) {
             registerReceiver();
             Intent intent = new Intent(context,
                     StreetPassService.class);
@@ -72,7 +74,7 @@ public class StreetPassBle {
 
     public void stop() {
         unregisterReceiver();
-        if (StreetPassApplication.get().isRunning()) {
+        if (serviceIsRunning()) {
             Intent intent = new Intent(context,
                     StreetPassService.class);
             context.stopService(intent);
@@ -146,5 +148,18 @@ public class StreetPassBle {
             }
         }
     }
+
+    private boolean serviceIsRunning() {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> services = activityManager.getRunningServices(Integer.MAX_VALUE);
+
+        for (ActivityManager.RunningServiceInfo info : services) {
+            if (Constants.SERVICE_NAME.equals(info.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 }
