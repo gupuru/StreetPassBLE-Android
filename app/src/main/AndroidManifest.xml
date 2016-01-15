@@ -23,6 +23,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="gupuru.streetpassble.service.StreetPassService"
+            android:enabled="true"
+            android:exported="true"/>
+
     </application>
 
 </manifest>
