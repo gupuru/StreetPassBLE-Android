@@ -16,6 +16,7 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.ParcelUuid;
+import android.os.SystemClock;
 import android.text.TextUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -24,17 +25,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import gupuru.streetpassble.DeviceManage;
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
 import gupuru.streetpassble.parcelable.ScanDataParcelable;
 
-public class StreetPassService  extends Service {
+public class StreetPassService extends Service {
 
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
+    private DeviceManage deviceManage;
     private String uuid;
     private String data;
+    private long intervalTimeMillisecond = Constants.INTERVAL_TIME_MILL_SECOND;
 
     public StreetPassService() {
     }
@@ -45,6 +49,7 @@ public class StreetPassService  extends Service {
 
         bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
         bluetoothLeAdvertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
+        deviceManage = new DeviceManage(getApplicationContext());
 
     }
 
@@ -58,6 +63,7 @@ public class StreetPassService  extends Service {
             bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
             bluetoothLeAdvertiser = null;
         }
+        deviceManage.clear();
         super.onDestroy();
     }
 
@@ -71,6 +77,8 @@ public class StreetPassService  extends Service {
             if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
                 data = intent.getStringExtra(Constants.DATA);
             }
+            intervalTimeMillisecond = intent.getLongExtra(Constants.INTERVAL_TIME
+                    , Constants.INTERVAL_TIME_MILL_SECOND);
             if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
                 scan();
                 advertising();
@@ -107,7 +115,7 @@ public class StreetPassService  extends Service {
             // 設定
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
                     .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-                    .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                    .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)
                     .setTimeout(0)
                     .setConnectable(true)
                     .build();
@@ -205,13 +213,16 @@ public class StreetPassService  extends Service {
                     }
                 }
 
-                ScanDataParcelable scanDataParcelable = new ScanDataParcelable(callbackType,  bluetoothDevice.getAddress(), bluetoothDevice.getName(), uuid, distance, serviceData);
-
-                Intent intent = new Intent();
-                intent.setAction(Constants.ACTION_SCAN);
-                intent.putExtra(Constants.SCAN_DATA, scanDataParcelable);
-                sendBroadcast(intent);
-
+                long scanTime = deviceManage.read(bluetoothDevice.getAddress());
+                if (scanTime < 1 || (SystemClock.elapsedRealtime() - scanTime) > intervalTimeMillisecond) {
+                    ScanDataParcelable scanDataParcelable
+                            = new ScanDataParcelable(callbackType, bluetoothDevice.getAddress(), bluetoothDevice.getName(), uuid, distance, serviceData);
+                    deviceManage.save(scanDataParcelable);
+                    Intent intent = new Intent();
+                    intent.setAction(Constants.ACTION_SCAN);
+                    intent.putExtra(Constants.SCAN_DATA, scanDataParcelable);
+                    sendBroadcast(intent);
+                }
             }
         }
 
