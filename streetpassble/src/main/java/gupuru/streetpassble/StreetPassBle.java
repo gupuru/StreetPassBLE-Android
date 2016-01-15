@@ -72,6 +72,18 @@ public class StreetPassBle {
         }
     }
 
+    public void start(String uuid, String data, long intervalTimeMillisecond) {
+        if (!serviceIsRunning()) {
+            registerReceiver();
+            Intent intent = new Intent(context,
+                    StreetPassService.class);
+            intent.putExtra(Constants.UUID, uuid);
+            intent.putExtra(Constants.DATA, data);
+            intent.putExtra(Constants.INTERVAL_TIME, intervalTimeMillisecond);
+            context.startService(intent);
+        }
+    }
+
     public void stop() {
         unregisterReceiver();
         if (serviceIsRunning()) {
