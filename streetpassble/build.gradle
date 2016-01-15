@@ -1,7 +1,20 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+def repo = new File(rootDir, "repository")
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository url: "file://${repo.absolutePath}"
+            pom.version = '0.0.1'             // version
+            pom.groupId = 'gupuru'    // グループ名
+            pom.artifactId = 'streetpassble' // ライブラリ名
+        }
+    }
+}
 
 android {
-    publishNonDefault true
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
 
