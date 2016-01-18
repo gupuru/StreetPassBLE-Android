@@ -3,6 +3,8 @@ package gupuru.streetpassble.service;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -13,7 +15,10 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.text.TextUtils;
@@ -33,11 +38,10 @@ public class StreetPassService extends Service {
 
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
-    private String uuid;
-    private String data;
-    private int scanMode = ScanSettings.SCAN_MODE_LOW_POWER;
-    private int advertiseMode = AdvertiseSettings.ADVERTISE_MODE_BALANCED;
-    private int txPowerLevel = AdvertiseSettings.ADVERTISE_TX_POWER_LOW;
+    private BluetoothAdapter bluetoothAdapter;
+    private BluetoothGatt bluetoothGatt;
+    private ConnectDeviceReceiver connectDeviceReceiver = null;
+    private IntentFilter connectDeviceFilter = null;
 
     public StreetPassService() {
     }
@@ -46,9 +50,49 @@ public class StreetPassService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
-        bluetoothLeAdvertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+        bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
 
+        connectDeviceReceiver = new ConnectDeviceReceiver();
+        connectDeviceFilter = new IntentFilter(
+                Constants.ACTION_CONNECT_DEVICE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        if (intent != null) {
+            //uuid取得
+            String uuid = "";
+            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.UUID))) {
+                uuid = intent.getStringExtra(Constants.UUID);
+            }
+            //serviceData取得
+            String data = "";
+            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
+                data = intent.getStringExtra(Constants.DATA);
+            }
+            //scanMode取得
+            int scanMode = intent.getIntExtra(Constants.SCAN_MODE, ScanSettings.SCAN_MODE_LOW_POWER);
+            //txPowerLevel取得
+            int txPowerLevel = intent.getIntExtra(Constants.TX_POWER_LEVEL, AdvertiseSettings.ADVERTISE_TX_POWER_LOW);
+            //advertiseMode取得
+            int advertiseMode = intent.getIntExtra(Constants.ADVERTISE_MODE, AdvertiseSettings.ADVERTISE_MODE_BALANCED);
+
+            registerReceiver(connectDeviceReceiver, connectDeviceFilter);
+
+            //BLEの送信に対応しているか
+            if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
+                //対応->送受信
+                scan(uuid, scanMode);
+                advertising(uuid, data, advertiseMode, txPowerLevel);
+            } else {
+                //非対応->受信のみ
+                scan(uuid, scanMode);
+            }
+        }
+        return START_STICKY;
     }
 
     @Override
@@ -61,38 +105,8 @@ public class StreetPassService extends Service {
             bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
             bluetoothLeAdvertiser = null;
         }
+        unregisterReceiver(connectDeviceReceiver);
         super.onDestroy();
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        super.onStartCommand(intent, flags, startId);
-        if (intent != null) {
-            //uuid取得
-            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.UUID))) {
-                uuid = intent.getStringExtra(Constants.UUID);
-            }
-            //serviceData取得
-            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
-                data = intent.getStringExtra(Constants.DATA);
-            }
-            //scanMode取得
-            scanMode = intent.getIntExtra(Constants.SCAN_MODE, ScanSettings.SCAN_MODE_LOW_POWER);
-            //txPowerLevel取得
-            txPowerLevel = intent.getIntExtra(Constants.TX_POWER_LEVEL, AdvertiseSettings.ADVERTISE_TX_POWER_LOW);
-            //advertiseMode取得
-            advertiseMode = intent.getIntExtra(Constants.ADVERTISE_MODE, AdvertiseSettings.ADVERTISE_MODE_BALANCED);
-            //BLEの送信に対応しているか
-            if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
-                //対応->送受信
-                scan();
-                advertising();
-            } else {
-                //非対応->受信のみ
-                scan();
-            }
-        }
-        return START_STICKY;
     }
 
     @Override
@@ -100,8 +114,8 @@ public class StreetPassService extends Service {
         return null;
     }
 
-    private void scan() {
-        if (uuid != null) {
+    private void scan(String uuid, int scanMode) {
+        if (uuid != null && !uuid.equals("")) {
             List<ScanFilter> filters = new ArrayList<>();
             ScanFilter filter = new ScanFilter.Builder()
                     .setServiceUuid(new ParcelUuid(UUID.fromString(uuid)))
@@ -116,8 +130,8 @@ public class StreetPassService extends Service {
         }
     }
 
-    private void advertising() {
-        if (uuid != null) {
+    private void advertising(String uuid, String data, int advertiseMode, int txPowerLevel) {
+        if (uuid != null && !uuid.equals("")) {
             // 設定
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
                     .setAdvertiseMode(advertiseMode)
@@ -258,6 +272,31 @@ public class StreetPassService extends Service {
             intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
             intent.putExtra(Constants.ERROR_SCAN_ADV, errorParcelable);
             sendBroadcast(intent);
+        }
+    };
+
+    private class ConnectDeviceReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DEVICE_ADDRESS))) {
+                String deviceAddress = intent.getStringExtra(Constants.DEVICE_ADDRESS);
+                if (deviceAddress != null && !deviceAddress.equals("")) {
+                    BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
+                    bluetoothGatt = device.connectGatt(this, false, mGattCallback);
+
+                }
+            }
+        }
+    }
+
+    private final BluetoothGattCallback bluetoothGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            super.onServicesDiscovered(gatt, status);
         }
     };
 

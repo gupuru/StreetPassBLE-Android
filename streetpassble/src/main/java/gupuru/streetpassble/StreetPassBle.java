@@ -49,10 +49,18 @@ public class StreetPassBle {
         this.onStreetPassListener = onStreetPassListener;
     }
 
-    public boolean canStreetPass() {
+    /**
+     * BLEに対応しているか。対応している場合はtrue, していない場合はfalseを返す
+     * @return
+     */
+    public boolean isStreetPass() {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 
+    /**
+     * 送信可能の場合true, できない場合はfalseを返す
+     * @return
+     */
     public boolean isAdvertise() {
         return (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported());
     }
@@ -116,6 +124,15 @@ public class StreetPassBle {
     public void setTxPowerLevel(int txPowerLevel) {
         this.txPowerLevel = txPowerLevel;
     }
+
+    public void connectDevice(String address) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_CONNECT_DEVICE);
+        intent.putExtra(Constants.DEVICE_ADDRESS, address);
+        context.sendBroadcast(intent);
+    }
+
+    //region Receiver
 
     /**
      * Receiverの初期化
@@ -199,6 +216,8 @@ public class StreetPassBle {
             }
         }
     }
+
+    //endregion
 
     /**
      * Serviceが稼働しているか。稼働中->true, 非稼働中->falseを返す
