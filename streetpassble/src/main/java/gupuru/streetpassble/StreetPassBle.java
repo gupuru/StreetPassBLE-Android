@@ -2,6 +2,8 @@ package gupuru.streetpassble;
 
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +29,10 @@ public class StreetPassBle {
     private IntentFilter scanDataIntentFilter = null;
     private AdvDataReceiver advDataReceiver = null;
     private IntentFilter advDataIntentFilter = null;
+
+    private int scanMode = ScanSettings.SCAN_MODE_LOW_POWER;
+    private int advertiseMode = AdvertiseSettings.ADVERTISE_MODE_BALANCED;
+    private int txPowerLevel = AdvertiseSettings.ADVERTISE_TX_POWER_LOW;
 
     public StreetPassBle(Context context) {
         this.context = context;
@@ -68,22 +74,16 @@ public class StreetPassBle {
                     StreetPassService.class);
             intent.putExtra(Constants.UUID, uuid);
             intent.putExtra(Constants.DATA, data);
+            intent.putExtra(Constants.SCAN_MODE, scanMode);
+            intent.putExtra(Constants.ADVERTISE_MODE, advertiseMode);
+            intent.putExtra(Constants.TX_POWER_LEVEL, txPowerLevel);
             context.startService(intent);
         }
     }
 
-    public void start(String uuid, String data, long intervalTimeMillisecond) {
-        if (!serviceIsRunning()) {
-            registerReceiver();
-            Intent intent = new Intent(context,
-                    StreetPassService.class);
-            intent.putExtra(Constants.UUID, uuid);
-            intent.putExtra(Constants.DATA, data);
-            intent.putExtra(Constants.INTERVAL_TIME, intervalTimeMillisecond);
-            context.startService(intent);
-        }
-    }
-
+    /**
+     * Service停止(BLEの送受信停止)
+     */
     public void stop() {
         unregisterReceiver();
         if (serviceIsRunning()) {
@@ -93,6 +93,33 @@ public class StreetPassBle {
         }
     }
 
+    /**
+     * ScanModeの設定
+     * @param scanMode
+     */
+    public void setScanMode(int scanMode) {
+        this.scanMode = scanMode;
+    }
+
+    /**
+     * Advertiseの設定
+     * @param advertiseMode
+     */
+    public void setAdvertiseMode(int advertiseMode) {
+        this.advertiseMode = advertiseMode;
+    }
+
+    /**
+     * TxPowerLevelの設定
+     * @param txPowerLevel
+     */
+    public void setTxPowerLevel(int txPowerLevel) {
+        this.txPowerLevel = txPowerLevel;
+    }
+
+    /**
+     * Receiverの初期化
+     */
     private void initReceiver(){
         scanDataReceiver = new ScanDataReceiver();
         scanDataIntentFilter = new IntentFilter(
@@ -105,12 +132,18 @@ public class StreetPassBle {
                 Constants.ACTION_ADV);
     }
 
+    /**
+     * Receiver登録
+     */
     private void registerReceiver() {
         context.registerReceiver(scanDataReceiver, scanDataIntentFilter);
         context.registerReceiver(advDataReceiver, advDataIntentFilter);
         context.registerReceiver(errorScanAdvReceiver, errorScanAdvFilter);
     }
 
+    /**
+     * Receiver解除
+     */
     private void unregisterReceiver() {
         if (scanDataReceiver != null) {
             context.unregisterReceiver(scanDataReceiver);
@@ -167,6 +200,10 @@ public class StreetPassBle {
         }
     }
 
+    /**
+     * Serviceが稼働しているか。稼働中->true, 非稼働中->falseを返す
+     * @return
+     */
     private boolean serviceIsRunning() {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningServiceInfo> services = activityManager.getRunningServices(Integer.MAX_VALUE);

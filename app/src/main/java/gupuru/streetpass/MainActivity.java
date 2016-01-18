@@ -1,11 +1,13 @@
 package gupuru.streetpass;
 
 import android.Manifest;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.ScanSettings;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -59,7 +61,10 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.start:
-                streetPassBle.start("0000180a-0000-1000-8000-00805f9b34fb", "test", 10000);
+                streetPassBle.start("0000180a-0000-1000-8000-00805f9b34fb", "testだよ");
+                streetPassBle.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
+                streetPassBle.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
+                streetPassBle.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW);
                 break;
             case R.id.stop:
                 streetPassBle.stop();
