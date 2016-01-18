@@ -10,7 +10,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -50,23 +49,6 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
             }
         }
 
-        //RecyclerView初期化
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        recyclerView.setHasFixedSize(true);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.this);
-        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        //区切り線をつける
-        recyclerView.addItemDecoration(new DividerItemDecoration(MainActivity.this, null));
-        bleDataArrayList = new ArrayList<>();
-        //Adapter初期化
-        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, bleDataArrayList);
-        //アダプターにセット
-        recyclerView.setAdapter(bleRecyclerAdapter);
-        //更新を通知
-        bleRecyclerAdapter.notifyDataSetChanged();
-
-
         Button startBtn = (Button) findViewById(R.id.start);
         startBtn.setOnClickListener(this);
         Button stopBtn = (Button) findViewById(R.id.stop);
@@ -86,11 +68,27 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
             startBtn.setVisibility(View.GONE);
             startBtn.setVisibility(View.GONE);
         }
+
+        //RecyclerView初期化
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        recyclerView.setHasFixedSize(true);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.this);
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        recyclerView.setLayoutManager(linearLayoutManager);
+        //区切り線をつける
+        recyclerView.addItemDecoration(new DividerItemDecoration(MainActivity.this, null));
+        bleDataArrayList = new ArrayList<>();
+        //Adapter初期化
+        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, bleDataArrayList, streetPassBle);
+        //アダプターにセット
+        recyclerView.setAdapter(bleRecyclerAdapter);
+        //更新を通知
+        bleRecyclerAdapter.notifyDataSetChanged();
+
     }
 
     @Override
     public void streetPassResult(int callbackType, String deviceAddress, String deviceName, String uuid, double distance, String serviceData) {
-        Log.d("ここ", deviceAddress);
         statusTextView.setText("受信しています。");
 
         final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN);
@@ -106,7 +104,6 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
     @Override
     public void advertiseSuccess(int txPowerLevel, int mode, int timeOut) {
         statusTextView.setText("送信しています。");
-        Log.d("ここ", "送信成功");
     }
 
     @Override
@@ -119,13 +116,15 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         switch (v.getId()) {
             case R.id.start:
                 statusTextView.setText("開始します。");
-                streetPassBle.start("0000180a-0000-1000-8000-00805f9b34fb", "test");
+                streetPassBle.start("0000180a-0000-1000-8000-00805f9b34fb", "test_yp");
                 streetPassBle.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
                 streetPassBle.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
                 streetPassBle.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW);
                 break;
             case R.id.stop:
                 streetPassBle.stop();
+                bleRecyclerAdapter.clear();
+                bleRecyclerAdapter.notifyDataSetChanged();
                 statusTextView.setText("停止しました。");
                 break;
             default:

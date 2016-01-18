@@ -70,7 +70,7 @@ public class StreetPassBle {
             registerReceiver();
             Intent intent = new Intent(context,
                     StreetPassService.class);
-            intent.putExtra(Constants.UUID, uuid);
+            intent.putExtra(Constants.SERVICE_UUID, uuid);
             context.startService(intent);
         }
     }
@@ -80,7 +80,7 @@ public class StreetPassBle {
             registerReceiver();
             Intent intent = new Intent(context,
                     StreetPassService.class);
-            intent.putExtra(Constants.UUID, uuid);
+            intent.putExtra(Constants.SERVICE_UUID, uuid);
             intent.putExtra(Constants.DATA, data);
             intent.putExtra(Constants.SCAN_MODE, scanMode);
             intent.putExtra(Constants.ADVERTISE_MODE, advertiseMode);
@@ -125,10 +125,26 @@ public class StreetPassBle {
         this.txPowerLevel = txPowerLevel;
     }
 
-    public void connectDevice(String address) {
+    /**
+     * 端末に接続する
+     * @param address
+     */
+    public void connectDevice(String address, String characteristicUuid) {
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_CONNECT_DEVICE);
         intent.putExtra(Constants.DEVICE_ADDRESS, address);
+        intent.putExtra(Constants.CHARACTERISTIC_UUID, characteristicUuid);
+        context.sendBroadcast(intent);
+    }
+
+    /**
+     * 端末にStringのデータを送信する
+     * @param data
+     */
+    public void sendDataToDevice(String data) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
+        intent.putExtra(Constants.DATA, data);
         context.sendBroadcast(intent);
     }
 
