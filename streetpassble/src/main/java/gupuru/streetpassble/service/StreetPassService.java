@@ -6,17 +6,15 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanRecord;
-import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -33,13 +31,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import gupuru.streetpassble.callback.AdvertiseBle;
+import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
-import gupuru.streetpassble.parcelable.ScanDataParcelable;
 
 public class StreetPassService extends Service {
 
+    private Context context;
+    private ScanBle scanBle;
+    private AdvertiseBle advertiseBle;
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private BluetoothAdapter bluetoothAdapter;
@@ -52,6 +52,12 @@ public class StreetPassService extends Service {
     private SendDataToDeviceReceiver sendDataToDeviceReceiver = null;
     private IntentFilter sendDataToDeviceFilter = null;
 
+
+    public static String HEART_RATE_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb";
+    public final static UUID UUID_HEART_RATE_MEASUREMENT =
+            UUID.fromString(HEART_RATE_MEASUREMENT);
+
+
     public StreetPassService() {
     }
 
@@ -59,7 +65,11 @@ public class StreetPassService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        context = getApplicationContext();
+
+        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+
+        bluetoothAdapter = bluetoothManager.getAdapter();
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
 
@@ -109,12 +119,12 @@ public class StreetPassService extends Service {
 
     @Override
     public void onDestroy() {
-        if (scanCallback != null && bluetoothLeScanner != null) {
-            bluetoothLeScanner.stopScan(scanCallback);
+        if (scanBle != null && bluetoothLeScanner != null) {
+            bluetoothLeScanner.stopScan(scanBle);
             bluetoothLeScanner = null;
         }
-        if (bluetoothLeAdvertiser != null && advertiseCallback != null) {
-            bluetoothLeAdvertiser.stopAdvertising(advertiseCallback);
+        if (bluetoothLeAdvertiser != null && advertiseBle != null) {
+            bluetoothLeAdvertiser.stopAdvertising(advertiseBle);
             bluetoothLeAdvertiser = null;
         }
         unregisterReceiver(connectDeviceReceiver);
@@ -139,7 +149,9 @@ public class StreetPassService extends Service {
                     .setScanMode(scanMode)
                     .build();
 
-            bluetoothLeScanner.startScan(filters, settings, scanCallback);
+            scanBle = new ScanBle(context);
+
+            bluetoothLeScanner.startScan(filters, settings, scanBle);
         }
     }
 
@@ -169,128 +181,11 @@ public class StreetPassService extends Service {
                     .setIncludeTxPowerLevel(true)
                     .build();
 
-            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback);
+            advertiseBle = new AdvertiseBle(context);
+
+            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseBle);
         }
     }
-
-    private AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
-        @Override
-        public void onStartSuccess(AdvertiseSettings settingsInEffect) {
-            super.onStartSuccess(settingsInEffect);
-
-            AdvertiseSuccessParcelable advertiseSuccessParcelable = new AdvertiseSuccessParcelable(
-                    settingsInEffect.getTxPowerLevel(),
-                    settingsInEffect.getMode(),
-                    settingsInEffect.getTimeout()
-            );
-
-            Intent intent = new Intent();
-            intent.setAction(Constants.ACTION_ADV);
-            intent.putExtra(Constants.ADV_DATA, advertiseSuccessParcelable);
-            sendBroadcast(intent);
-        }
-
-        @Override
-        public void onStartFailure(int errorCode) {
-            super.onStartFailure(errorCode);
-            String errorMessage = "";
-            switch (errorCode) {
-                case ADVERTISE_FAILED_ALREADY_STARTED:
-                    errorMessage = "既にAdvertiseを実行中です";
-                    break;
-                case ADVERTISE_FAILED_DATA_TOO_LARGE:
-                    errorMessage = "Advertiseのメッセージが大きすぎます";
-                    break;
-                case ADVERTISE_FAILED_FEATURE_UNSUPPORTED:
-                    errorMessage = "Advertiseをサポートしていません";
-                    break;
-                case ADVERTISE_FAILED_INTERNAL_ERROR:
-                    errorMessage = "内部エラーが発生しました";
-                    break;
-                case ADVERTISE_FAILED_TOO_MANY_ADVERTISERS:
-                    errorMessage = "利用可能なAdvertiseのインスタンスが余っていません";
-                    break;
-            }
-
-            ErrorParcelable errorParcelable = new ErrorParcelable(errorCode, errorMessage);
-
-            Intent intent = new Intent();
-            intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
-            intent.putExtra(Constants.ERROR_SCAN_ADV, errorParcelable);
-            sendBroadcast(intent);
-        }
-    };
-
-    private ScanCallback scanCallback = new ScanCallback() {
-        @Override
-        public void onScanResult(int callbackType, ScanResult result) {
-            super.onScanResult(callbackType, result);
-            if (result == null
-                    || result.getDevice() == null
-                    || TextUtils.isEmpty(result.getDevice().getName()))
-                return;
-
-            BluetoothDevice bluetoothDevice = result.getDevice();
-            ScanRecord scanRecord = result.getScanRecord();
-            if (scanRecord != null) {
-                double distance = scanRecord.getTxPowerLevel() - result.getRssi();
-                String uuid = "";
-                byte[] data = null;
-                String serviceData = "";
-
-                for (ParcelUuid parcelUuid : scanRecord.getServiceUuids()) {
-                    data = scanRecord.getServiceData(parcelUuid);
-                    uuid = parcelUuid.getUuid().toString();
-                }
-                if (data != null) {
-                    try {
-                        serviceData = new String(data, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                ScanDataParcelable scanDataParcelable
-                        = new ScanDataParcelable(callbackType, bluetoothDevice.getAddress(), bluetoothDevice.getName(), uuid, distance, serviceData);
-                Intent intent = new Intent();
-                intent.setAction(Constants.ACTION_SCAN);
-                intent.putExtra(Constants.SCAN_DATA, scanDataParcelable);
-                sendBroadcast(intent);
-            }
-        }
-
-        @Override
-        public void onBatchScanResults(List<ScanResult> results) {
-            super.onBatchScanResults(results);
-        }
-
-        @Override
-        public void onScanFailed(int errorCode) {
-            super.onScanFailed(errorCode);
-            String errorMessage = "";
-            switch (errorCode) {
-                case SCAN_FAILED_ALREADY_STARTED:
-                    errorMessage = "既にBLEスキャンを実行中です";
-                    break;
-                case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
-                    errorMessage = "BLEスキャンを開始できませんでした";
-                    break;
-                case SCAN_FAILED_FEATURE_UNSUPPORTED:
-                    errorMessage = "BLEの検索をサポートしていません。";
-                    break;
-                case SCAN_FAILED_INTERNAL_ERROR:
-                    errorMessage = "内部エラーが発生しました";
-                    break;
-            }
-
-            ErrorParcelable errorParcelable = new ErrorParcelable(errorCode, errorMessage);
-
-            Intent intent = new Intent();
-            intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
-            intent.putExtra(Constants.ERROR_SCAN_ADV, errorParcelable);
-            sendBroadcast(intent);
-        }
-    };
 
     private class ConnectDeviceReceiver extends BroadcastReceiver {
         @Override
@@ -302,6 +197,8 @@ public class StreetPassService extends Service {
                         && characteristicUuid != null && !characteristicUuid.equals("")) {
                     BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
                     bluetoothGatt = device.connectGatt(getApplicationContext(), false, bluetoothGattCallback);
+                    bluetoothLeScanner.stopScan(scanBle);
+                    bluetoothLeScanner = null;
                 }
             }
         }
@@ -312,6 +209,8 @@ public class StreetPassService extends Service {
         public void onReceive(Context context, Intent intent) {
             if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
                 String data = intent.getStringExtra(Constants.DATA);
+                bluetoothGattCharacteristic.setValue(data);
+                bluetoothGatt.writeCharacteristic(bluetoothGattCharacteristic);
             }
         }
     }
@@ -322,7 +221,6 @@ public class StreetPassService extends Service {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 // 接続に成功したらサービスを検索
                 bluetoothGatt.connect();
-                bluetoothGatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 // 接続が切れたらGATTを空
                 if (bluetoothGatt != null) {
@@ -337,12 +235,14 @@ public class StreetPassService extends Service {
             super.onServicesDiscovered(gatt, status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 for (BluetoothGattService service : gatt.getServices()) {
-                    if (service != null) {
-                        bluetoothGattCharacteristic = service.getCharacteristic(UUID.fromString(characteristicUuid));
-                        if (bluetoothGattCharacteristic != null) {
-                            bluetoothGattCharacteristic.setValue("てす");
-                            bluetoothGatt.writeCharacteristic(bluetoothGattCharacteristic);
-                            bluetoothGatt.readCharacteristic(bluetoothGattCharacteristic);
+                    if ((service == null) || (service.getUuid() == null)) {
+                        continue;
+                    }
+                    for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+                        for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
+                            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                            bluetoothGatt.writeDescriptor(descriptor);
+                            Log.d("ここ", "よばれるa");
                         }
                     }
                 }
@@ -351,7 +251,8 @@ public class StreetPassService extends Service {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-
+            byte[] data = characteristic.getValue();
+            Log.d("ここ", data.toString());
         }
 
         @Override
@@ -359,12 +260,9 @@ public class StreetPassService extends Service {
                                          BluetoothGattCharacteristic characteristic, int status) {
             if (characteristic != null) {
                 final byte[] data = characteristic.getValue();
-                try {
-                    String text = new String(data, "UTF-8");
-                    Log.d("read", text);
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+                String text = new String(data);
+                Log.d("readByte", data.toString());
+                Log.d("read", text);
             }
         }
 

@@ -3,6 +3,7 @@ package gupuru.streetpass.activity;
 import android.Manifest;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.ScanSettings;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,6 +26,7 @@ import gupuru.streetpass.adapter.BleRecyclerAdapter;
 import gupuru.streetpass.bean.BleData;
 import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.StreetPassBle;
+import gupuru.streetpassble.constants.Constants;
 
 public class MainActivity extends AppCompatActivity implements StreetPassBle.OnStreetPassListener, View.OnClickListener {
 
@@ -53,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         startBtn.setOnClickListener(this);
         Button stopBtn = (Button) findViewById(R.id.stop);
         stopBtn.setOnClickListener(this);
+        Button sendBtn = (Button) findViewById(R.id.send);
+        sendBtn.setOnClickListener(this);
         statusTextView = (TextView) findViewById(R.id.status);
 
         streetPassBle = new StreetPassBle(MainActivity.this);
@@ -126,6 +130,12 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
                 bleRecyclerAdapter.clear();
                 bleRecyclerAdapter.notifyDataSetChanged();
                 statusTextView.setText("停止しました。");
+                break;
+            case R.id.send:
+                Intent intent = new Intent();
+                intent.setAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
+                intent.putExtra(Constants.DATA, "niku");
+                sendBroadcast(intent);
                 break;
             default:
                 break;
