@@ -41,7 +41,9 @@ public class StreetPassBle {
 
     public interface OnStreetPassListener {
         void streetPassResult(ScanDataParcelable scanDataParcelable);
+
         void advertiseSuccess(int txPowerLevel, int mode, int timeOut);
+
         void error(int errorCode, String errorMessage);
     }
 
@@ -51,6 +53,7 @@ public class StreetPassBle {
 
     /**
      * BLEに対応しているか。対応している場合はtrue, していない場合はfalseを返す
+     *
      * @return
      */
     public boolean isStreetPass() {
@@ -59,6 +62,7 @@ public class StreetPassBle {
 
     /**
      * 送信可能の場合true, できない場合はfalseを返す
+     *
      * @return
      */
     public boolean isAdvertise() {
@@ -103,6 +107,7 @@ public class StreetPassBle {
 
     /**
      * ScanModeの設定
+     *
      * @param scanMode
      */
     public void setScanMode(int scanMode) {
@@ -111,6 +116,7 @@ public class StreetPassBle {
 
     /**
      * Advertiseの設定
+     *
      * @param advertiseMode
      */
     public void setAdvertiseMode(int advertiseMode) {
@@ -119,6 +125,7 @@ public class StreetPassBle {
 
     /**
      * TxPowerLevelの設定
+     *
      * @param txPowerLevel
      */
     public void setTxPowerLevel(int txPowerLevel) {
@@ -127,6 +134,7 @@ public class StreetPassBle {
 
     /**
      * 端末に接続する
+     *
      * @param address
      */
     public void connectDevice(String address, String characteristicUuid) {
@@ -139,6 +147,7 @@ public class StreetPassBle {
 
     /**
      * 端末にStringのデータを送信する
+     *
      * @param data
      */
     public void sendDataToDevice(String data) {
@@ -153,7 +162,7 @@ public class StreetPassBle {
     /**
      * Receiverの初期化
      */
-    private void initReceiver(){
+    private void initReceiver() {
         scanDataReceiver = new ScanDataReceiver();
         scanDataIntentFilter = new IntentFilter(
                 Constants.ACTION_SCAN);
@@ -178,14 +187,24 @@ public class StreetPassBle {
      * Receiver解除
      */
     private void unregisterReceiver() {
-        if (scanDataReceiver != null) {
+        boolean isRegistered = true;
+        try {
             context.unregisterReceiver(scanDataReceiver);
+        } catch (IllegalArgumentException e) {
+            isRegistered = false;
         }
-        if (errorScanAdvReceiver != null) {
+        try {
             context.unregisterReceiver(errorScanAdvReceiver);
+        } catch (IllegalArgumentException e) {
+            isRegistered = false;
         }
-        if (advDataReceiver != null) {
+        try {
             context.unregisterReceiver(advDataReceiver);
+        } catch (IllegalArgumentException e) {
+            isRegistered = false;
+        }
+        if (!isRegistered) {
+            onStreetPassListener.error(222, "unregisterReceiverエラー");
         }
     }
 
@@ -230,6 +249,7 @@ public class StreetPassBle {
 
     /**
      * Serviceが稼働しているか。稼働中->true, 非稼働中->falseを返す
+     *
      * @return
      */
     private boolean serviceIsRunning() {
