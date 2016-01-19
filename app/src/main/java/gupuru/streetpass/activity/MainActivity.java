@@ -1,6 +1,9 @@
 package gupuru.streetpass.activity;
 
 import android.Manifest;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.ScanSettings;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -8,17 +11,25 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 import gupuru.streetpass.R;
 import gupuru.streetpass.adapter.BleRecyclerAdapter;
 import gupuru.streetpass.bean.BleData;
 import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.StreetPassBle;
+import gupuru.streetpassble.constants.Constants;
+import gupuru.streetpassble.parcelable.ScanDataParcelable;
 
-public class MainActivity extends AppCompatActivity /*implements StreetPassBle.OnStreetPassListener, View.OnClickListener*/ {
+public class MainActivity extends AppCompatActivity implements StreetPassBle.OnStreetPassListener, View.OnClickListener {
 
     private StreetPassBle streetPassBle;
     private TextView statusTextView;
@@ -40,15 +51,15 @@ public class MainActivity extends AppCompatActivity /*implements StreetPassBle.O
                 requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
             }
         }
-/*
+
         Button startBtn = (Button) findViewById(R.id.start);
         startBtn.setOnClickListener(this);
         Button stopBtn = (Button) findViewById(R.id.stop);
         stopBtn.setOnClickListener(this);
         Button sendBtn = (Button) findViewById(R.id.send);
-        sendBtn.setOnClickListener(this);*/
+        sendBtn.setOnClickListener(this);
         statusTextView = (TextView) findViewById(R.id.status);
-/*
+
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassListener(this);
 
@@ -61,7 +72,7 @@ public class MainActivity extends AppCompatActivity /*implements StreetPassBle.O
         } else {
             startBtn.setVisibility(View.GONE);
             startBtn.setVisibility(View.GONE);
-        }*/
+        }
 
         //RecyclerView初期化
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
@@ -80,7 +91,7 @@ public class MainActivity extends AppCompatActivity /*implements StreetPassBle.O
         bleRecyclerAdapter.notifyDataSetChanged();
 
     }
-/*
+
     @Override
     public void streetPassResult(ScanDataParcelable scanDataParcelable) {
         statusTextView.setText("受信しています。");
@@ -104,8 +115,8 @@ public class MainActivity extends AppCompatActivity /*implements StreetPassBle.O
     public void error(int errorCode, String errorMessage) {
         statusTextView.setText(errorMessage);
     }
-*/
-  /*  @Override
+
+      @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.start:
@@ -130,6 +141,6 @@ public class MainActivity extends AppCompatActivity /*implements StreetPassBle.O
             default:
                 break;
         }
-    }*/
+    }
 
 }
