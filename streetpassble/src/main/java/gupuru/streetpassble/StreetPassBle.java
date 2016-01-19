@@ -40,7 +40,7 @@ public class StreetPassBle {
     }
 
     public interface OnStreetPassListener {
-        void streetPassResult(int callbackType, String deviceAddress, String deviceName, String uuid, double distance, String serviceData);
+        void streetPassResult(ScanDataParcelable scanDataParcelable);
         void advertiseSuccess(int txPowerLevel, int mode, int timeOut);
         void error(int errorCode, String errorMessage);
     }
@@ -194,14 +194,7 @@ public class StreetPassBle {
         public void onReceive(Context context, Intent intent) {
             ScanDataParcelable scanDataParcelable = (ScanDataParcelable) intent.getExtras().get(Constants.SCAN_DATA);
             if (scanDataParcelable != null) {
-                onStreetPassListener.streetPassResult(
-                        scanDataParcelable.getCallbackType(),
-                        scanDataParcelable.getDeviceAddress(),
-                        scanDataParcelable.getDeviceName(),
-                        scanDataParcelable.getUuid(),
-                        scanDataParcelable.getDistance(),
-                        scanDataParcelable.getServiceData()
-                );
+                onStreetPassListener.streetPassResult(scanDataParcelable);
             }
         }
     }

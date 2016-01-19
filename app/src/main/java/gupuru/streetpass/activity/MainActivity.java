@@ -27,6 +27,7 @@ import gupuru.streetpass.bean.BleData;
 import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.StreetPassBle;
 import gupuru.streetpassble.constants.Constants;
+import gupuru.streetpassble.parcelable.ScanDataParcelable;
 
 public class MainActivity extends AppCompatActivity implements StreetPassBle.OnStreetPassListener, View.OnClickListener {
 
@@ -92,13 +93,13 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
     }
 
     @Override
-    public void streetPassResult(int callbackType, String deviceAddress, String deviceName, String uuid, double distance, String serviceData) {
+    public void streetPassResult(ScanDataParcelable scanDataParcelable) {
         statusTextView.setText("受信しています。");
 
         final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN);
         final Date date = new Date(System.currentTimeMillis());
 
-        BleData bleData = new BleData(deviceName, deviceAddress, serviceData, df.format(date));
+        BleData bleData = new BleData(scanDataParcelable.getDeviceName(), scanDataParcelable.getDeviceAddress(), scanDataParcelable.getServiceData(), df.format(date));
         bleDataArrayList.add(bleData);
         bleRecyclerAdapter.setbleDataArrayList(bleDataArrayList);
         bleRecyclerAdapter.notifyDataSetChanged();
