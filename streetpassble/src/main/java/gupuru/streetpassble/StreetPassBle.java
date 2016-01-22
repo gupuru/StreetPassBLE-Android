@@ -2,9 +2,6 @@ package gupuru.streetpassble;
 
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.le.AdvertiseSettings;
-import android.bluetooth.le.ScanSettings;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,23 +13,16 @@ import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
 import gupuru.streetpassble.parcelable.ScanDataParcelable;
+import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.reciver.StreetPassReceiver;
 import gupuru.streetpassble.service.StreetPassService;
 
-public class StreetPassBle {
+public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverListener {
 
     private Context context;
     private OnStreetPassListener onStreetPassListener;
-
-    private ErrorScanAdvReceiver errorScanAdvReceiver = null;
-    private IntentFilter errorScanAdvFilter = null;
-    private ScanDataReceiver scanDataReceiver = null;
-    private IntentFilter scanDataIntentFilter = null;
-    private AdvDataReceiver advDataReceiver = null;
-    private IntentFilter advDataIntentFilter = null;
-
-    private int scanMode = ScanSettings.SCAN_MODE_LOW_POWER;
-    private int advertiseMode = AdvertiseSettings.ADVERTISE_MODE_BALANCED;
-    private int txPowerLevel = AdvertiseSettings.ADVERTISE_TX_POWER_LOW;
+    private IntentFilter intentFilter;
+    private StreetPassReceiver streetPassReceiver;
 
     public StreetPassBle(Context context) {
         this.context = context;
@@ -42,26 +32,46 @@ public class StreetPassBle {
     public interface OnStreetPassListener {
         void streetPassResult(ScanDataParcelable scanDataParcelable);
 
-        void advertiseSuccess(int txPowerLevel, int mode, int timeOut);
+        void advertiseSuccess(AdvertiseSuccessParcelable advertiseSuccessParcelable);
 
-        void error(int errorCode, String errorMessage);
+        void error(ErrorParcelable errorParcelable);
     }
 
     public void setOnStreetPassListener(OnStreetPassListener onStreetPassListener) {
         this.onStreetPassListener = onStreetPassListener;
     }
 
+    //region support
+
     /**
-     * BLEに対応しているか。対応している場合はtrue, していない場合はfalseを返す
+     * Bluetoothに対応しているか。対応 -> true, 非対応 -> false
      *
      * @return
      */
-    public boolean isStreetPass() {
+    public boolean isBluetooth() {
+        return BluetoothAdapter.getDefaultAdapter() != null;
+    }
+
+    /**
+     * BLEに対応しているか。対応 -> true, 非対応 -> false
+     *
+     * @return
+     */
+    public boolean isBle() {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 
     /**
-     * 送信可能の場合true, できない場合はfalseを返す
+     * BluetoothがONかどうか。 ON -> true, OFF -> false
+     *
+     * @return
+     */
+    public boolean isOnBluetooth() {
+        return BluetoothAdapter.getDefaultAdapter().isEnabled();
+    }
+
+    /**
+     * BLEのAdvertiseが使えるか。可能 -> true, 不可能 -> false
      *
      * @return
      */
@@ -69,28 +79,30 @@ public class StreetPassBle {
         return (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported());
     }
 
+    //endregion
+
     public void start(String uuid) {
         if (!serviceIsRunning()) {
-            registerReceiver();
-            Intent intent = new Intent(context,
-                    StreetPassService.class);
-            intent.putExtra(Constants.SERVICE_UUID, uuid);
-            context.startService(intent);
+            context.registerReceiver(streetPassReceiver, intentFilter);
+            StreetPassSettings streetPassSettings = new StreetPassSettings();
+            streetPassSettings.setUuid(uuid);
+            updateBroadCast(streetPassSettings);
+
         }
     }
 
-    public void start(String uuid, String data) {
+    public void start(StreetPassSettings streetPassSettings) {
         if (!serviceIsRunning()) {
-            registerReceiver();
-            Intent intent = new Intent(context,
-                    StreetPassService.class);
-            intent.putExtra(Constants.SERVICE_UUID, uuid);
-            intent.putExtra(Constants.DATA, data);
-            intent.putExtra(Constants.SCAN_MODE, scanMode);
-            intent.putExtra(Constants.ADVERTISE_MODE, advertiseMode);
-            intent.putExtra(Constants.TX_POWER_LEVEL, txPowerLevel);
-            context.startService(intent);
+            context.registerReceiver(streetPassReceiver, intentFilter);
+            updateBroadCast(streetPassSettings);
         }
+    }
+
+    private void updateBroadCast(StreetPassSettings streetPassSettings ) {
+        Intent intent = new Intent(context,
+                StreetPassService.class);
+        intent.putExtra(Constants.STREET_PASS_SETTINGS, streetPassSettings);
+        context.startService(intent);
     }
 
     /**
@@ -106,30 +118,29 @@ public class StreetPassBle {
     }
 
     /**
-     * ScanModeの設定
+     * serviceが動いているか  稼働中 -> true, 非稼働中 -> false
      *
-     * @param scanMode
+     * @return
      */
-    public void setScanMode(int scanMode) {
-        this.scanMode = scanMode;
+    public boolean isRunning() {
+        return serviceIsRunning();
     }
 
     /**
-     * Advertiseの設定
+     * Serviceが稼働しているか。稼働中->true, 非稼働中->falseを返す
      *
-     * @param advertiseMode
+     * @return
      */
-    public void setAdvertiseMode(int advertiseMode) {
-        this.advertiseMode = advertiseMode;
-    }
+    private boolean serviceIsRunning() {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> services = activityManager.getRunningServices(Integer.MAX_VALUE);
 
-    /**
-     * TxPowerLevelの設定
-     *
-     * @param txPowerLevel
-     */
-    public void setTxPowerLevel(int txPowerLevel) {
-        this.txPowerLevel = txPowerLevel;
+        for (ActivityManager.RunningServiceInfo info : services) {
+            if (Constants.SERVICE_NAME.equals(info.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -163,24 +174,12 @@ public class StreetPassBle {
      * Receiverの初期化
      */
     private void initReceiver() {
-        scanDataReceiver = new ScanDataReceiver();
-        scanDataIntentFilter = new IntentFilter(
-                Constants.ACTION_SCAN);
-        errorScanAdvReceiver = new ErrorScanAdvReceiver();
-        errorScanAdvFilter = new IntentFilter(
-                Constants.ACTION_SCAN_ADV_ERROR);
-        advDataReceiver = new AdvDataReceiver();
-        advDataIntentFilter = new IntentFilter(
-                Constants.ACTION_ADV);
-    }
-
-    /**
-     * Receiver登録
-     */
-    private void registerReceiver() {
-        context.registerReceiver(scanDataReceiver, scanDataIntentFilter);
-        context.registerReceiver(advDataReceiver, advDataIntentFilter);
-        context.registerReceiver(errorScanAdvReceiver, errorScanAdvFilter);
+        streetPassReceiver = new StreetPassReceiver();
+        streetPassReceiver.setOnStreetPassReceiverListener(this);
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(Constants.ACTION_SCAN);
+        intentFilter.addAction(Constants.ACTION_SCAN_ADV_ERROR);
+        intentFilter.addAction(Constants.ACTION_ADV);
     }
 
     /**
@@ -189,79 +188,35 @@ public class StreetPassBle {
     private void unregisterReceiver() {
         boolean isRegistered = true;
         try {
-            context.unregisterReceiver(scanDataReceiver);
-        } catch (IllegalArgumentException e) {
-            isRegistered = false;
-        }
-        try {
-            context.unregisterReceiver(errorScanAdvReceiver);
-        } catch (IllegalArgumentException e) {
-            isRegistered = false;
-        }
-        try {
-            context.unregisterReceiver(advDataReceiver);
+            context.unregisterReceiver(streetPassReceiver);
         } catch (IllegalArgumentException e) {
             isRegistered = false;
         }
         if (!isRegistered) {
-            onStreetPassListener.error(222, "unregisterReceiverエラー");
-        }
-    }
-
-    private class ScanDataReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            ScanDataParcelable scanDataParcelable = (ScanDataParcelable) intent.getExtras().get(Constants.SCAN_DATA);
-            if (scanDataParcelable != null) {
-                onStreetPassListener.streetPassResult(scanDataParcelable);
-            }
-        }
-    }
-
-    private class AdvDataReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            AdvertiseSuccessParcelable advertiseSuccessParcelable = (AdvertiseSuccessParcelable) intent.getExtras().get(Constants.ADV_DATA);
-            if (advertiseSuccessParcelable != null) {
-                onStreetPassListener.advertiseSuccess(
-                        advertiseSuccessParcelable.getTxPowerLevel(),
-                        advertiseSuccessParcelable.getMode(),
-                        advertiseSuccessParcelable.getTimeOut()
-                );
-            }
-        }
-    }
-
-    private class ErrorScanAdvReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            ErrorParcelable errorParcelable = (ErrorParcelable) intent.getExtras().get(Constants.ERROR_SCAN_ADV);
-            if (errorParcelable != null) {
-                onStreetPassListener.error(
-                        errorParcelable.getErrorCode(),
-                        errorParcelable.getErrorMessage()
-                );
-            }
+            ErrorParcelable errorParcelable = new ErrorParcelable(222, "unregisterReceiverエラー");
+            onStreetPassListener.error(errorParcelable);
         }
     }
 
     //endregion
 
-    /**
-     * Serviceが稼働しているか。稼働中->true, 非稼働中->falseを返す
-     *
-     * @return
-     */
-    private boolean serviceIsRunning() {
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> services = activityManager.getRunningServices(Integer.MAX_VALUE);
+    //region StreetPassReceiver callback
 
-        for (ActivityManager.RunningServiceInfo info : services) {
-            if (Constants.SERVICE_NAME.equals(info.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
+    @Override
+    public void scanResult(ScanDataParcelable scanDataParcelable) {
+        onStreetPassListener.streetPassResult(scanDataParcelable);
     }
+
+    @Override
+    public void advertiseResult(AdvertiseSuccessParcelable advertiseSuccessParcelable) {
+        onStreetPassListener.advertiseSuccess(advertiseSuccessParcelable);
+    }
+
+    @Override
+    public void error(ErrorParcelable errorParcelable) {
+        onStreetPassListener.error(errorParcelable);
+    }
+
+    //endregion
 
 }

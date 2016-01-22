@@ -19,7 +19,6 @@ import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.text.TextUtils;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +27,7 @@ import gupuru.streetpassble.callback.AdvertiseBle;
 import gupuru.streetpassble.callback.BLEServer;
 import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.constants.Constants;
+import gupuru.streetpassble.parcelable.StreetPassSettings;
 
 public class StreetPassService extends Service {
 
@@ -38,11 +38,11 @@ public class StreetPassService extends Service {
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt bluetoothGatt;
-    private String serviceUuid;
     private ConnectDeviceReceiver connectDeviceReceiver = null;
     private IntentFilter connectDeviceFilter = null;
     private SendDataToDeviceReceiver sendDataToDeviceReceiver = null;
     private IntentFilter sendDataToDeviceFilter = null;
+    private StreetPassSettings streetPassSettings;
 
     public StreetPassService() {
     }
@@ -71,21 +71,8 @@ public class StreetPassService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         if (intent != null) {
-            //uuid取得
-            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.SERVICE_UUID))) {
-                serviceUuid = intent.getStringExtra(Constants.SERVICE_UUID);
-            }
-            //serviceData取得
-            String data = "";
-            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
-                data = intent.getStringExtra(Constants.DATA);
-            }
-            //scanMode取得
-            int scanMode = intent.getIntExtra(Constants.SCAN_MODE, ScanSettings.SCAN_MODE_LOW_POWER);
-            //txPowerLevel取得
-            int txPowerLevel = intent.getIntExtra(Constants.TX_POWER_LEVEL, AdvertiseSettings.ADVERTISE_TX_POWER_LOW);
-            //advertiseMode取得
-            int advertiseMode = intent.getIntExtra(Constants.ADVERTISE_MODE, AdvertiseSettings.ADVERTISE_MODE_BALANCED);
+            //StreetPassSettings取得
+            streetPassSettings = intent.getParcelableExtra(Constants.STREET_PASS_SETTINGS);
 
             registerReceiver(connectDeviceReceiver, connectDeviceFilter);
             registerReceiver(sendDataToDeviceReceiver, sendDataToDeviceFilter);
@@ -93,11 +80,11 @@ public class StreetPassService extends Service {
             //BLEの送信に対応しているか
             if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
                 //対応->送受信
-                scan(serviceUuid, scanMode);
-                advertising(serviceUuid, data, advertiseMode, txPowerLevel);
+                scan();
+                advertising();
             } else {
                 //非対応->受信のみ
-                scan(serviceUuid, scanMode);
+                scan();
             }
         }
         return START_STICKY;
@@ -115,6 +102,7 @@ public class StreetPassService extends Service {
         }
         unregisterReceiver(connectDeviceReceiver);
         unregisterReceiver(sendDataToDeviceReceiver);
+        streetPassSettings = null;
         super.onDestroy();
     }
 
@@ -123,16 +111,16 @@ public class StreetPassService extends Service {
         return null;
     }
 
-    private void scan(String uuid, int scanMode) {
-        if (uuid != null && !uuid.equals("")) {
+    private void scan() {
+        if (streetPassSettings.getUuid() != null && !streetPassSettings.getUuid().equals("")) {
             List<ScanFilter> filters = new ArrayList<>();
             ScanFilter filter = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(UUID.fromString(uuid)))
+                    .setServiceUuid(new ParcelUuid(UUID.fromString(streetPassSettings.getUuid())))
                     .build();
             filters.add(filter);
 
             ScanSettings settings = new ScanSettings.Builder()
-                    .setScanMode(scanMode)
+                    .setScanMode(streetPassSettings.getScanMode())
                     .build();
 
             scanBle = new ScanBle(context);
@@ -141,30 +129,32 @@ public class StreetPassService extends Service {
         }
     }
 
-    private void advertising(String uuid, String data, int advertiseMode, int txPowerLevel) {
-        if (uuid != null && !uuid.equals("")) {
+    private void advertising() {
+        if (streetPassSettings.getUuid() != null && !streetPassSettings.getUuid().equals("")) {
             // 設定
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
-                    .setAdvertiseMode(advertiseMode)
-                    .setTxPowerLevel(txPowerLevel)
-                    .setTimeout(0)
-                    .setConnectable(true)
+                    .setAdvertiseMode(streetPassSettings.getAdvertiseMode())
+                    .setTxPowerLevel(streetPassSettings.getTxPowerLevel())
+                    .setTimeout(streetPassSettings.getTimeOut())
+                    .setConnectable(streetPassSettings.isAdvertiseConnectable())
                     .build();
 
-            if (data == null) {
-                data = "";
+            String serviceData = streetPassSettings.getData();
+            if (serviceData == null) {
+                serviceData = "";
             } else {
-                if (data.getBytes().length > 20) {
-                    data = data.substring(0, 15);
+                if (serviceData.getBytes().length > 20) {
+                    serviceData = serviceData.substring(0, 6);
                 }
             }
+
             // アドバタイジングデータ
-            ParcelUuid pUuid = new ParcelUuid(UUID.fromString(uuid));
+            ParcelUuid pUuid = new ParcelUuid(UUID.fromString(streetPassSettings.getUuid()));
             AdvertiseData advertiseData = new AdvertiseData.Builder()
                     .addServiceUuid(pUuid)
-                    .addServiceData(pUuid, data.getBytes(Charset.forName("UTF-8")))
-                    .setIncludeDeviceName(true)
-                    .setIncludeTxPowerLevel(true)
+                    .addServiceData(pUuid, serviceData.getBytes())
+                    .setIncludeDeviceName(streetPassSettings.isAdvertiseIncludeDeviceName())
+                    .setIncludeTxPowerLevel(streetPassSettings.isAdvertiseIncludeTxPowerLevel())
                     .build();
 
             advertiseBle = new AdvertiseBle(context);
