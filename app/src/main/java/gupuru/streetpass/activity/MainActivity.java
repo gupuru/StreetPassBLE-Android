@@ -27,7 +27,10 @@ import gupuru.streetpass.bean.BleData;
 import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.StreetPassBle;
 import gupuru.streetpassble.constants.Constants;
+import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
+import gupuru.streetpassble.parcelable.ErrorParcelable;
 import gupuru.streetpassble.parcelable.ScanDataParcelable;
+import gupuru.streetpassble.parcelable.StreetPassSettings;
 
 public class MainActivity extends AppCompatActivity implements StreetPassBle.OnStreetPassListener, View.OnClickListener {
 
@@ -63,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassListener(this);
 
-        if (streetPassBle.isStreetPass()) {
+        if (streetPassBle.isBle()) {
             if (streetPassBle.isAdvertise()) {
                 statusTextView.setText("送受信可能");
             } else {
@@ -99,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN);
         final Date date = new Date(System.currentTimeMillis());
 
-        BleData bleData = new BleData(scanDataParcelable.getDeviceName(), scanDataParcelable.getDeviceAddress(), scanDataParcelable.getServiceData(), df.format(date));
+        BleData bleData = new BleData("ふええええ", scanDataParcelable.getDeviceAddress(), scanDataParcelable.getServiceData(), df.format(date));
         bleDataArrayList.add(bleData);
         bleRecyclerAdapter.setbleDataArrayList(bleDataArrayList);
         bleRecyclerAdapter.notifyDataSetChanged();
@@ -107,13 +110,13 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
     }
 
     @Override
-    public void advertiseSuccess(int txPowerLevel, int mode, int timeOut) {
+    public void advertiseSuccess(AdvertiseSuccessParcelable advertiseSuccessParcelable) {
         statusTextView.setText("送信しています。");
     }
 
     @Override
-    public void error(int errorCode, String errorMessage) {
-        statusTextView.setText(errorMessage);
+    public void error(ErrorParcelable errorParcelable) {
+        statusTextView.setText(errorParcelable.getErrorMessage());
     }
 
       @Override
@@ -121,10 +124,15 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         switch (v.getId()) {
             case R.id.start:
                 statusTextView.setText("開始します。");
-                streetPassBle.start("0000180a-0000-1000-8000-00805f9b34fb", "test_yp");
-                streetPassBle.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
-                streetPassBle.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
-                streetPassBle.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW);
+                StreetPassSettings streetPassSettings = new StreetPassSettings();
+                streetPassSettings.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
+                streetPassSettings.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
+                streetPassSettings.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
+                streetPassSettings.setAdvertiseIncludeDeviceName(false);
+                streetPassSettings.setAdvertiseIncludeTxPowerLevel(false);
+                streetPassSettings.setUuid("0000180a-0000-1000-8000-00805f9b34fb");
+                streetPassSettings.setData("あいうえお_yp");
+                streetPassBle.start(streetPassSettings);
                 break;
             case R.id.stop:
                 streetPassBle.stop();

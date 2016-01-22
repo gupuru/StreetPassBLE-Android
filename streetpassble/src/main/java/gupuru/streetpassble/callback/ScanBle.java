@@ -7,7 +7,6 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.os.ParcelUuid;
-import android.text.TextUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -27,23 +26,25 @@ public class ScanBle extends ScanCallback {
     @Override
     public void onScanResult(int callbackType, ScanResult result) {
         super.onScanResult(callbackType, result);
-        if (result == null
-                || result.getDevice() == null
-                || TextUtils.isEmpty(result.getDevice().getName()))
+        if (result == null) {
             return;
-
+        }
         BluetoothDevice bluetoothDevice = result.getDevice();
         ScanRecord scanRecord = result.getScanRecord();
         if (scanRecord != null) {
-            double distance = scanRecord.getTxPowerLevel() - result.getRssi();
+            //推定距離
+            double distance = getDistance(scanRecord, result);
+
             String uuid = "";
             byte[] data = null;
             String serviceData = "";
-
             for (ParcelUuid parcelUuid : scanRecord.getServiceUuids()) {
+                //ServiceData取得
                 data = scanRecord.getServiceData(parcelUuid);
+                //uuid取得
                 uuid = parcelUuid.getUuid().toString();
             }
+            //ServiceDataをstringに変換
             if (data != null) {
                 try {
                     serviceData = new String(data, "UTF-8");
@@ -91,6 +92,16 @@ public class ScanBle extends ScanCallback {
         intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
         intent.putExtra(Constants.ERROR_SCAN_ADV, errorParcelable);
         context.sendBroadcast(intent);
+    }
+
+    /**
+     * 推定距離を返す
+     * @param scanRecord
+     * @param result
+     * @return
+     */
+    private double getDistance(ScanRecord scanRecord, ScanResult result) {
+        return scanRecord.getTxPowerLevel() - result.getRssi();
     }
 
 }
