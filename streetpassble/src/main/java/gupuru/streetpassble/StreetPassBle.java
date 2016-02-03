@@ -11,8 +11,8 @@ import java.util.List;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
+import gupuru.streetpassble.parcelable.DeviceData;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
-import gupuru.streetpassble.parcelable.ScanDataParcelable;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 import gupuru.streetpassble.reciver.StreetPassReceiver;
 import gupuru.streetpassble.service.StreetPassService;
@@ -21,16 +21,16 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     private Context context;
     private OnStreetPassListener onStreetPassListener;
-    private IntentFilter intentFilter;
+
+    private IntentFilter streetPassIntentFilter;
     private StreetPassReceiver streetPassReceiver;
 
     public StreetPassBle(Context context) {
         this.context = context;
-        initReceiver();
     }
 
     public interface OnStreetPassListener {
-        void streetPassResult(ScanDataParcelable scanDataParcelable);
+        void streetPassResult(DeviceData deviceData);
 
         void advertiseSuccess(AdvertiseSuccessParcelable advertiseSuccessParcelable);
 
@@ -83,25 +83,42 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     public void start(String uuid) {
         if (!serviceIsRunning()) {
-            context.registerReceiver(streetPassReceiver, intentFilter);
+            initStreetPassReceiver();
+            context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
             StreetPassSettings streetPassSettings = new StreetPassSettings();
-            streetPassSettings.setUuid(uuid);
+            streetPassSettings.setServiceUuid(uuid);
             updateBroadCast(streetPassSettings);
-
         }
     }
 
     public void start(StreetPassSettings streetPassSettings) {
         if (!serviceIsRunning()) {
-            context.registerReceiver(streetPassReceiver, intentFilter);
+            initStreetPassReceiver();
+            context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
             updateBroadCast(streetPassSettings);
         }
     }
 
-    private void updateBroadCast(StreetPassSettings streetPassSettings ) {
+    public void start(StreetPassSettings streetPassSettings, boolean canConnect) {
+        if (!serviceIsRunning()) {
+            initStreetPassReceiver();
+            context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
+            updateBroadCast(streetPassSettings, canConnect);
+        }
+    }
+
+    private void updateBroadCast(StreetPassSettings streetPassSettings) {
         Intent intent = new Intent(context,
                 StreetPassService.class);
         intent.putExtra(Constants.STREET_PASS_SETTINGS, streetPassSettings);
+        context.startService(intent);
+    }
+
+    private void updateBroadCast(StreetPassSettings streetPassSettings, boolean canConnect) {
+        Intent intent = new Intent(context,
+                StreetPassService.class);
+        intent.putExtra(Constants.STREET_PASS_SETTINGS, streetPassSettings);
+        intent.putExtra(Constants.CAN_CONNECT, canConnect);
         context.startService(intent);
     }
 
@@ -109,7 +126,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
      * Service停止(BLEの送受信停止)
      */
     public void stop() {
-        unregisterReceiver();
+        unregisterStreetPassReceiver();
         if (serviceIsRunning()) {
             Intent intent = new Intent(context,
                     StreetPassService.class);
@@ -143,57 +160,28 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
         return false;
     }
 
-    /**
-     * 端末に接続する
-     *
-     * @param address
-     */
-    public void connectDevice(String address, String characteristicUuid) {
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_CONNECT_DEVICE);
-        intent.putExtra(Constants.DEVICE_ADDRESS, address);
-        intent.putExtra(Constants.CHARACTERISTIC_UUID, characteristicUuid);
-        context.sendBroadcast(intent);
-    }
-
-    /**
-     * 端末にStringのデータを送信する
-     *
-     * @param data
-     */
-    public void sendDataToDevice(String data) {
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
-        intent.putExtra(Constants.DATA, data);
-        context.sendBroadcast(intent);
-    }
-
     //region Receiver
 
     /**
-     * Receiverの初期化
+     * StreetPassReceiverの初期化
      */
-    private void initReceiver() {
+    private void initStreetPassReceiver() {
         streetPassReceiver = new StreetPassReceiver();
         streetPassReceiver.setOnStreetPassReceiverListener(this);
-        intentFilter = new IntentFilter();
-        intentFilter.addAction(Constants.ACTION_SCAN);
-        intentFilter.addAction(Constants.ACTION_SCAN_ADV_ERROR);
-        intentFilter.addAction(Constants.ACTION_ADV);
+        streetPassIntentFilter = new IntentFilter();
+        streetPassIntentFilter.addAction(Constants.ACTION_SCAN);
+        streetPassIntentFilter.addAction(Constants.ACTION_SCAN_ADV_ERROR);
+        streetPassIntentFilter.addAction(Constants.ACTION_ADV);
     }
 
     /**
-     * Receiver解除
+     * StreetPassReceiver解除
      */
-    private void unregisterReceiver() {
-        boolean isRegistered = true;
+    private void unregisterStreetPassReceiver() {
         try {
             context.unregisterReceiver(streetPassReceiver);
         } catch (IllegalArgumentException e) {
-            isRegistered = false;
-        }
-        if (!isRegistered) {
-            ErrorParcelable errorParcelable = new ErrorParcelable(222, "unregisterReceiverエラー");
+            ErrorParcelable errorParcelable = new ErrorParcelable(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
             onStreetPassListener.error(errorParcelable);
         }
     }
@@ -203,17 +191,17 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     //region StreetPassReceiver callback
 
     @Override
-    public void scanResult(ScanDataParcelable scanDataParcelable) {
-        onStreetPassListener.streetPassResult(scanDataParcelable);
+    public void onStreetPassScanResult(DeviceData deviceData) {
+        onStreetPassListener.streetPassResult(deviceData);
     }
 
     @Override
-    public void advertiseResult(AdvertiseSuccessParcelable advertiseSuccessParcelable) {
+    public void onStreetPassAdvertiseResult(AdvertiseSuccessParcelable advertiseSuccessParcelable) {
         onStreetPassListener.advertiseSuccess(advertiseSuccessParcelable);
     }
 
     @Override
-    public void error(ErrorParcelable errorParcelable) {
+    public void onStreetPassError(ErrorParcelable errorParcelable) {
         onStreetPassListener.error(errorParcelable);
     }
 

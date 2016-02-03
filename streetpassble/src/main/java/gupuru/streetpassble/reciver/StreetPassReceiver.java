@@ -8,7 +8,7 @@ import android.content.Intent;
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
-import gupuru.streetpassble.parcelable.ScanDataParcelable;
+import gupuru.streetpassble.parcelable.DeviceData;
 
 public class StreetPassReceiver extends BroadcastReceiver {
 
@@ -18,11 +18,11 @@ public class StreetPassReceiver extends BroadcastReceiver {
     }
 
     public interface OnStreetPassReceiverListener {
-        void scanResult(ScanDataParcelable scanDataParcelable);
+        void onStreetPassScanResult(DeviceData deviceData);
 
-        void advertiseResult(AdvertiseSuccessParcelable advertiseSuccessParcelable);
+        void onStreetPassAdvertiseResult(AdvertiseSuccessParcelable advertiseSuccessParcelable);
 
-        void error(ErrorParcelable errorParcelable);
+        void onStreetPassError(ErrorParcelable errorParcelable);
     }
 
     public void setOnStreetPassReceiverListener(OnStreetPassReceiverListener onStreetPassReceiverListener) {
@@ -33,22 +33,22 @@ public class StreetPassReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (Constants.ACTION_SCAN.equals(action)) {
-            ScanDataParcelable scanDataParcelable
-                    = (ScanDataParcelable) intent.getExtras().get(Constants.SCAN_DATA);
-            if (scanDataParcelable != null) {
-                onStreetPassReceiverListener.scanResult(scanDataParcelable);
+            DeviceData deviceData
+                    = (DeviceData) intent.getExtras().get(Constants.SCAN_DATA);
+            if (deviceData != null) {
+                onStreetPassReceiverListener.onStreetPassScanResult(deviceData);
             }
         } else if (Constants.ACTION_ADV.equals(action)) {
             AdvertiseSuccessParcelable advertiseSuccessParcelable
                     = (AdvertiseSuccessParcelable) intent.getExtras().get(Constants.ADV_DATA);
             if (advertiseSuccessParcelable != null) {
-                onStreetPassReceiverListener.advertiseResult(advertiseSuccessParcelable);
+                onStreetPassReceiverListener.onStreetPassAdvertiseResult(advertiseSuccessParcelable);
             }
         } else if (Constants.ACTION_SCAN_ADV_ERROR.equals(action)) {
             ErrorParcelable errorParcelable
                     = (ErrorParcelable) intent.getExtras().get(Constants.ERROR_SCAN_ADV);
             if (errorParcelable != null) {
-                onStreetPassReceiverListener.error(errorParcelable);
+                onStreetPassReceiverListener.onStreetPassError(errorParcelable);
             }
         }
     }

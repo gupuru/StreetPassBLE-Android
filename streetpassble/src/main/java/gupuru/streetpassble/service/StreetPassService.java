@@ -4,6 +4,9 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -11,25 +14,29 @@ import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
 import android.os.ParcelUuid;
-import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import gupuru.streetpassble.callback.AdvertiseBle;
-import gupuru.streetpassble.callback.BLEServer;
 import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.constants.Constants;
+import gupuru.streetpassble.constants.Settings;
+import gupuru.streetpassble.parcelable.ErrorParcelable;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.reciver.StreetPassServiceReceiver;
+import gupuru.streetpassble.server.BLEGattServer;
+import gupuru.streetpassble.server.BLEServer;
+import gupuru.streetpassble.util.StreetPassServiceUtil;
 
-public class StreetPassService extends Service {
+public class StreetPassService extends Service implements BLEGattServer.OnBLEGattServerListener
+        , StreetPassServiceReceiver.OnStreetPassServiceReceiverListener, BLEServer.OnBLEServerListener {
 
     private Context context;
     private ScanBle scanBle;
@@ -37,12 +44,14 @@ public class StreetPassService extends Service {
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private BluetoothAdapter bluetoothAdapter;
-    private BluetoothGatt bluetoothGatt;
-    private ConnectDeviceReceiver connectDeviceReceiver = null;
-    private IntentFilter connectDeviceFilter = null;
-    private SendDataToDeviceReceiver sendDataToDeviceReceiver = null;
-    private IntentFilter sendDataToDeviceFilter = null;
     private StreetPassSettings streetPassSettings;
+    private StreetPassServiceReceiver streetPassServiceReceiver;
+
+    private BluetoothGattServer gattServer;
+    private BLEServer bleServer;
+    private BLEGattServer bleGattServer;
+    private StreetPassServiceUtil streetPassServiceUtil;
+
 
     public StreetPassService() {
     }
@@ -53,18 +62,24 @@ public class StreetPassService extends Service {
 
         context = getApplicationContext();
 
+        streetPassServiceUtil = new StreetPassServiceUtil();
+        bleServer = new BLEServer();
+        bleServer.setOnBLEServerListener(this);
+
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
 
         bluetoothAdapter = bluetoothManager.getAdapter();
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
 
-        connectDeviceReceiver = new ConnectDeviceReceiver();
-        connectDeviceFilter = new IntentFilter(
-                Constants.ACTION_CONNECT_DEVICE);
-        sendDataToDeviceReceiver = new SendDataToDeviceReceiver();
-        sendDataToDeviceFilter = new IntentFilter(
-                Constants.ACTION_SEND_DATA_TO_DEVICE);
+        streetPassServiceReceiver = new StreetPassServiceReceiver();
+        streetPassServiceReceiver.setOnStreetPassServiceReceiverListener(this);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Constants.ACTION_CONNECT_DEVICE);
+        intentFilter.addAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
+        intentFilter.addAction(Constants.ACTION_OPEN_GATT);
+        intentFilter.addAction(Constants.ACTION_CLOSE_GATT);
+        registerReceiver(streetPassServiceReceiver, intentFilter);
     }
 
     @Override
@@ -73,10 +88,9 @@ public class StreetPassService extends Service {
         if (intent != null) {
             //StreetPassSettings取得
             streetPassSettings = intent.getParcelableExtra(Constants.STREET_PASS_SETTINGS);
-
-            registerReceiver(connectDeviceReceiver, connectDeviceFilter);
-            registerReceiver(sendDataToDeviceReceiver, sendDataToDeviceFilter);
-
+            if (intent.getBooleanExtra(Constants.CAN_CONNECT, false)) {
+                openGattServer();
+            }
             //BLEの送信に対応しているか
             if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
                 //対応->送受信
@@ -100,9 +114,15 @@ public class StreetPassService extends Service {
             bluetoothLeAdvertiser.stopAdvertising(advertiseBle);
             bluetoothLeAdvertiser = null;
         }
-        unregisterReceiver(connectDeviceReceiver);
-        unregisterReceiver(sendDataToDeviceReceiver);
+        try {
+            unregisterReceiver(streetPassServiceReceiver);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        closeGattServer();
         streetPassSettings = null;
+        streetPassServiceUtil = null;
+        bleServer = null;
         super.onDestroy();
     }
 
@@ -111,11 +131,41 @@ public class StreetPassService extends Service {
         return null;
     }
 
+    private void closeGattServer() {
+        if (gattServer != null) {
+            gattServer.clearServices();
+            gattServer.close();
+            gattServer = null;
+        }
+        bleGattServer = null;
+    }
+
+    private void openGattServer() {
+        BluetoothManager manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bleGattServer = new BLEGattServer();
+        bleGattServer.setOnBLEGattServerListener(this);
+        gattServer = manager.openGattServer(context, bleGattServer);
+        bleGattServer.setBluetoothGattServer(gattServer);
+        //Serviceを登録
+        BluetoothGattService service = new BluetoothGattService(
+                UUID.fromString(Settings.SERVICE_UUID),
+                BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        BluetoothGattCharacteristic mCharacteristic = new BluetoothGattCharacteristic(
+                UUID.fromString(Settings.CHARACTERISTIC_UUID),
+                BluetoothGattCharacteristic.PROPERTY_NOTIFY |
+                        BluetoothGattCharacteristic.PROPERTY_READ |
+                        BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_READ |
+                        BluetoothGattCharacteristic.PERMISSION_WRITE);
+        service.addCharacteristic(mCharacteristic);
+        gattServer.addService(service);
+    }
+
     private void scan() {
-        if (streetPassSettings.getUuid() != null && !streetPassSettings.getUuid().equals("")) {
+        if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
             List<ScanFilter> filters = new ArrayList<>();
             ScanFilter filter = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(UUID.fromString(streetPassSettings.getUuid())))
+                    .setServiceUuid(new ParcelUuid(UUID.fromString(streetPassSettings.getServiceUuid())))
                     .build();
             filters.add(filter);
 
@@ -130,7 +180,7 @@ public class StreetPassService extends Service {
     }
 
     private void advertising() {
-        if (streetPassSettings.getUuid() != null && !streetPassSettings.getUuid().equals("")) {
+        if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
             // 設定
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
                     .setAdvertiseMode(streetPassSettings.getAdvertiseMode())
@@ -149,7 +199,7 @@ public class StreetPassService extends Service {
             }
 
             // アドバタイジングデータ
-            ParcelUuid pUuid = new ParcelUuid(UUID.fromString(streetPassSettings.getUuid()));
+            ParcelUuid pUuid = new ParcelUuid(UUID.fromString(streetPassSettings.getServiceUuid()));
             AdvertiseData advertiseData = new AdvertiseData.Builder()
                     .addServiceUuid(pUuid)
                     .addServiceData(pUuid, serviceData.getBytes())
@@ -163,33 +213,102 @@ public class StreetPassService extends Service {
         }
     }
 
-    private BLEServer bleServer;
+    //region StreetPassServiceReceiver callback
 
-    private class ConnectDeviceReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DEVICE_ADDRESS))) {
-                String deviceAddress = intent.getStringExtra(Constants.DEVICE_ADDRESS);
-                String characteristicUuid = intent.getStringExtra(Constants.CHARACTERISTIC_UUID);
-                if (deviceAddress != null && !deviceAddress.equals("")
-                        && characteristicUuid != null && !characteristicUuid.equals("")) {
-                    BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-                    bleServer = new BLEServer(context, bluetoothGatt);
-                    bluetoothGatt = device.connectGatt(getApplicationContext(), false, bleServer);
-                    bluetoothGatt.connect();
-                }
+    @Override
+    public void onConnectDeviceData(String deviceAddress) {
+        if (deviceAddress != null && !deviceAddress.equals("")) {
+            if (bleServer != null) {
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
+                BluetoothGatt bluetoothGatt = device.connectGatt(context, true, bleServer);
+                bluetoothGatt.connect();
             }
         }
     }
 
-    private class SendDataToDeviceReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
-                String data = intent.getStringExtra(Constants.DATA);
-                bleServer.sendData(data);
-            }
-        }
+    @Override
+    public void onSendData(String data) {
+        bleServer.writeData(data);
     }
+
+    @Override
+    public void onClose() {
+        closeGattServer();
+    }
+
+    //endregion
+
+    //region BLEGattServer callback
+
+    @Override
+    public void onServiceAdded(boolean result) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_GATT_SERVICE_ADDED);
+        intent.putExtra(Constants.SERVICE_ADDED, result);
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void onCharacteristicReadRequest(BluetoothDevice device) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_GATT_SERVER_READ_REQUEST);
+        intent.putExtra(Constants.READ_REQUEST, streetPassServiceUtil.getDeviceData(device));
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void onCharacteristicWriteRequest(String message) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_GATT_SERVER_WRITE_REQUEST);
+        intent.putExtra(Constants.WRITE_REQUEST, message);
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void onConnectionStateChange(boolean isConnect, BluetoothDevice device) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_GATT_SERVER_STATE_CHANGE);
+        intent.putExtra(Constants.CONNECTION_DATA, streetPassServiceUtil.getDeviceData(device));
+        intent.putExtra(Constants.IS_CONNECTION, isConnect);
+        context.sendBroadcast(intent);
+    }
+
+    //endregion
+
+    //region BLEServer callback
+
+    @Override
+    public void onBLEServerRead(String data) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_BLE_SERVER_READ);
+        intent.putExtra(Constants.BLE_SERVER_READ, data);
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void onBLEServerWrite(String data) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_BLE_SERVER_WRITE);
+        intent.putExtra(Constants.BLE_SERVER_WRITE, data);
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void onConnected(boolean result) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_BLE_SERVER_CONNECTED);
+        intent.putExtra(Constants.BLE_SERVER_CONNECTED, result);
+        context.sendBroadcast(intent);
+    }
+
+    @Override
+    public void onBLEServerError(ErrorParcelable errorParcelable) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_BLE_SERVER_ERROR);
+        intent.putExtra(Constants.BLE_SERVER_ERROR, errorParcelable);
+        context.sendBroadcast(intent);
+    }
+
+    //endregion
 
 }

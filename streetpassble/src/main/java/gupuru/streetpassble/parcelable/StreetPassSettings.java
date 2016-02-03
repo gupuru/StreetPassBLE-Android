@@ -7,7 +7,8 @@ import gupuru.streetpassble.constants.Settings;
 
 public class StreetPassSettings implements Parcelable {
 
-    protected String uuid = Settings.SERVICE_UUID;
+    protected String serviceUuid = Settings.SERVICE_UUID;
+    protected String characteristicUuid = Settings.CHARACTERISTIC_UUID;
     protected String data = "";
     protected int scanMode = Settings.SCAN__MODE;
     protected int advertiseMode = Settings.ADVERTISE_MODE;
@@ -24,7 +25,8 @@ public class StreetPassSettings implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel out, int flags) {
-        out.writeString(uuid);
+        out.writeString(serviceUuid);
+        out.writeString(characteristicUuid);
         out.writeString(data);
         out.writeInt(scanMode);
         out.writeInt(advertiseMode);
@@ -49,9 +51,10 @@ public class StreetPassSettings implements Parcelable {
     public StreetPassSettings() {
     }
 
-    public StreetPassSettings(String uuid, String data, int scanMode, int advertiseMode, int txPowerLevel
+    public StreetPassSettings(String serviceUuid, String characteristicUuid , String data, int scanMode, int advertiseMode, int txPowerLevel
             , int timeOut, boolean advertiseConnectable, boolean advertiseIncludeDeviceName, boolean advertiseIncludeTxPowerLevel) {
-        this.uuid = uuid;
+        this.serviceUuid = serviceUuid;
+        this.characteristicUuid = characteristicUuid;
         this.data = data;
         this.scanMode = scanMode;
         this.advertiseMode = advertiseMode;
@@ -63,7 +66,8 @@ public class StreetPassSettings implements Parcelable {
     }
 
     private StreetPassSettings(Parcel in) {
-        uuid = in.readString();
+        serviceUuid = in.readString();
+        characteristicUuid = in.readString();
         data = in.readString();
         scanMode = in.readInt();
         advertiseMode = in.readInt();
@@ -82,12 +86,20 @@ public class StreetPassSettings implements Parcelable {
         this.data = data;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getServiceUuid() {
+        return serviceUuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setServiceUuid(String serviceUuid) {
+        this.serviceUuid = serviceUuid;
+    }
+
+    public String getCharacteristicUuid() {
+        return characteristicUuid;
+    }
+
+    public void setCharacteristicUuid(String characteristicUuid) {
+        this.characteristicUuid = characteristicUuid;
     }
 
     public int getAdvertiseMode() {

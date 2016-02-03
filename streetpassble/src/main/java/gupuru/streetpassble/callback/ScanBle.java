@@ -13,7 +13,7 @@ import java.util.List;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
-import gupuru.streetpassble.parcelable.ScanDataParcelable;
+import gupuru.streetpassble.parcelable.DeviceData;
 
 public class ScanBle extends ScanCallback {
 
@@ -53,11 +53,11 @@ public class ScanBle extends ScanCallback {
                 }
             }
 
-            ScanDataParcelable scanDataParcelable
-                    = new ScanDataParcelable(callbackType, bluetoothDevice.getAddress(), bluetoothDevice.getName(), uuid, distance, serviceData);
+            DeviceData deviceData
+                    = new DeviceData(callbackType, bluetoothDevice.getAddress(), bluetoothDevice.getName(), uuid, distance, serviceData);
             Intent intent = new Intent();
             intent.setAction(Constants.ACTION_SCAN);
-            intent.putExtra(Constants.SCAN_DATA, scanDataParcelable);
+            intent.putExtra(Constants.SCAN_DATA, deviceData);
             context.sendBroadcast(intent);
         }
     }
