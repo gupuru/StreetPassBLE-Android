@@ -11,6 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,17 +25,20 @@ import java.util.Locale;
 import gupuru.streetpass.R;
 import gupuru.streetpass.adapter.BleRecyclerAdapter;
 import gupuru.streetpass.bean.BleData;
+import gupuru.streetpass.constans.Constants;
 import gupuru.streetpass.utils.DividerItemDecoration;
+import gupuru.streetpassble.DeviceConnection;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
+import gupuru.streetpassble.parcelable.DeviceData;
 import gupuru.streetpassble.parcelable.ErrorParcelable;
-import gupuru.streetpassble.parcelable.ScanDataParcelable;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 
-public class MainActivity extends AppCompatActivity implements StreetPassBle.OnStreetPassListener, View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+        StreetPassBle.OnStreetPassListener, DeviceConnection.OnDeviceConnectionListener {
 
     private StreetPassBle streetPassBle;
+    private DeviceConnection deviceConnection;
     private TextView statusTextView;
     private ArrayList<BleData> bleDataArrayList;
     private BleRecyclerAdapter bleRecyclerAdapter;
@@ -61,10 +65,14 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         stopBtn.setOnClickListener(this);
         Button sendBtn = (Button) findViewById(R.id.send);
         sendBtn.setOnClickListener(this);
+        Button readBtn = (Button) findViewById(R.id.read);
+        readBtn.setOnClickListener(this);
         statusTextView = (TextView) findViewById(R.id.status);
 
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassListener(this);
+        deviceConnection = new DeviceConnection(MainActivity.this);
+        deviceConnection.setOnStreetPassListener(this);
 
         if (streetPassBle.isBle()) {
             if (streetPassBle.isAdvertise()) {
@@ -87,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
         recyclerView.addItemDecoration(new DividerItemDecoration(MainActivity.this, null));
         bleDataArrayList = new ArrayList<>();
         //Adapter初期化
-        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, bleDataArrayList, streetPassBle);
+        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, bleDataArrayList, deviceConnection);
         //アダプターにセット
         recyclerView.setAdapter(bleRecyclerAdapter);
         //更新を通知
@@ -96,13 +104,13 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
     }
 
     @Override
-    public void streetPassResult(ScanDataParcelable scanDataParcelable) {
+    public void streetPassResult(DeviceData deviceData) {
         statusTextView.setText("受信しています。");
 
         final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN);
         final Date date = new Date(System.currentTimeMillis());
 
-        BleData bleData = new BleData("ふええええ", scanDataParcelable.getDeviceAddress(), scanDataParcelable.getServiceData(), df.format(date));
+        BleData bleData = new BleData("ふええええ", deviceData.getDeviceAddress(), deviceData.getServiceData(), df.format(date));
         bleDataArrayList.add(bleData);
         bleRecyclerAdapter.setbleDataArrayList(bleDataArrayList);
         bleRecyclerAdapter.notifyDataSetChanged();
@@ -121,6 +129,7 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
 
     @Override
     public void onClick(View v) {
+        Intent intent;
         switch (v.getId()) {
             case R.id.start:
                 statusTextView.setText("開始します。");
@@ -128,27 +137,55 @@ public class MainActivity extends AppCompatActivity implements StreetPassBle.OnS
                 streetPassSettings.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
                 streetPassSettings.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
                 streetPassSettings.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
+                streetPassSettings.setAdvertiseConnectable(true);
                 streetPassSettings.setAdvertiseIncludeDeviceName(false);
                 streetPassSettings.setAdvertiseIncludeTxPowerLevel(false);
-                streetPassSettings.setUuid("0000180a-0000-1000-8000-00805f9b34fb");
+                streetPassSettings.setServiceUuid(Constants.SERVICE_UUID);
                 streetPassSettings.setData("あいうえお_yp");
-                streetPassBle.start(streetPassSettings);
+                deviceConnection.open();
+                streetPassBle.start(streetPassSettings, true);
                 break;
             case R.id.stop:
                 streetPassBle.stop();
+                if (deviceConnection != null) {
+                    deviceConnection.close();
+                }
                 bleRecyclerAdapter.clear();
                 bleRecyclerAdapter.notifyDataSetChanged();
                 statusTextView.setText("停止しました。");
                 break;
             case R.id.send:
-                Intent intent = new Intent();
-                intent.setAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
-                intent.putExtra(Constants.DATA, "niku");
-                sendBroadcast(intent);
+                break;
+            case R.id.read:
                 break;
             default:
                 break;
         }
+    }
+
+    @Override
+    public void deviceConnectInfo(DeviceData deviceData, boolean isConnect) {
+        Log.d("ここ", "接続した端末" + deviceData.getDeviceAddress());
+    }
+
+    @Override
+    public void deviceConnectSendInfo(DeviceData deviceData) {
+
+    }
+
+    @Override
+    public void deviceConnectSendReceiveData(String message) {
+
+    }
+
+    @Override
+    public void deviceConnectOpenServer(boolean result) {
+        Log.d("ここ", "server開いたか" + result);
+    }
+
+    @Override
+    public void deviceConnectError(ErrorParcelable errorParcelable) {
+        Log.d("ここ", "エラー" + errorParcelable.getErrorMessage());
     }
 
 }

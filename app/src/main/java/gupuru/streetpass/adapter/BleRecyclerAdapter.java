@@ -11,18 +11,18 @@ import java.util.ArrayList;
 
 import gupuru.streetpass.R;
 import gupuru.streetpass.bean.BleData;
-import gupuru.streetpassble.StreetPassBle;
+import gupuru.streetpassble.DeviceConnection;
 
 public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.ViewHolder> {
 
     private Context context;
     private ArrayList<BleData> bleDataArrayList;
-    private StreetPassBle streetPassBle;
+    private DeviceConnection deviceConnection;
 
-    public BleRecyclerAdapter(Context context, ArrayList<BleData> bleDataArrayList, StreetPassBle streetPassBle) {
+    public BleRecyclerAdapter(Context context, ArrayList<BleData> bleDataArrayList, DeviceConnection deviceConnection) {
         this.context = context;
         this.bleDataArrayList = bleDataArrayList;
-        this.streetPassBle = streetPassBle;
+        this.deviceConnection = deviceConnection;
     }
 
     public void setbleDataArrayList(ArrayList<BleData> bleDataArrayList) {
@@ -50,10 +50,11 @@ public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, final int i) {
         View v = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.recycler_view_ble, viewGroup, false);
+
         v.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                streetPassBle.connectDevice(bleDataArrayList.get(i).getDeviceAddress(), "00002a29-0000-1000-8000-00805f9b34fb");
+                deviceConnection.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
             }
         });
 
