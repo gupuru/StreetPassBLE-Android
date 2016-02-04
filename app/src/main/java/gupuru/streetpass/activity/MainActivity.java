@@ -3,7 +3,6 @@ package gupuru.streetpass.activity;
 import android.Manifest;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.ScanSettings;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,6 +13,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.text.DateFormat;
@@ -29,17 +29,19 @@ import gupuru.streetpass.constans.Constants;
 import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.DeviceConnection;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
+import gupuru.streetpassble.parcelable.AdvertiseSuccess;
 import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        StreetPassBle.OnStreetPassListener, DeviceConnection.OnDeviceConnectionListener {
+        StreetPassBle.OnStreetPassListener, DeviceConnection.OnDeviceConnectionListener,
+        DeviceConnection.OnDeviceCommunicationListener {
 
     private StreetPassBle streetPassBle;
     private DeviceConnection deviceConnection;
     private TextView statusTextView;
+    private EditText messageEditTextView;
     private ArrayList<BleData> bleDataArrayList;
     private BleRecyclerAdapter bleRecyclerAdapter;
     private RecyclerView recyclerView;
@@ -65,14 +67,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stopBtn.setOnClickListener(this);
         Button sendBtn = (Button) findViewById(R.id.send);
         sendBtn.setOnClickListener(this);
-        Button readBtn = (Button) findViewById(R.id.read);
-        readBtn.setOnClickListener(this);
+        Button disconnectBtn = (Button) findViewById(R.id.disconnect);
+        disconnectBtn.setOnClickListener(this);
         statusTextView = (TextView) findViewById(R.id.status);
+        messageEditTextView = (EditText) findViewById(R.id.edit);
 
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassListener(this);
         deviceConnection = new DeviceConnection(MainActivity.this);
         deviceConnection.setOnStreetPassListener(this);
+        deviceConnection.setOnDeviceCommunicationListener(this);
 
         if (streetPassBle.isBle()) {
             if (streetPassBle.isAdvertise()) {
@@ -118,18 +122,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void advertiseSuccess(AdvertiseSuccessParcelable advertiseSuccessParcelable) {
+    public void advertiseSuccess(AdvertiseSuccess advertiseSuccess) {
         statusTextView.setText("送信しています。");
     }
 
     @Override
-    public void error(ErrorParcelable errorParcelable) {
-        statusTextView.setText(errorParcelable.getErrorMessage());
+    public void error(Error error) {
+        statusTextView.setText(error.getErrorMessage());
     }
 
     @Override
     public void onClick(View v) {
-        Intent intent;
         switch (v.getId()) {
             case R.id.start:
                 statusTextView.setText("開始します。");
@@ -155,27 +158,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 statusTextView.setText("停止しました。");
                 break;
             case R.id.send:
+                if (deviceConnection != null) {
+                    String message = messageEditTextView.getText().toString();
+                    if (message.equals("")){
+                        message = "やまっぷ";
+                    }
+                    deviceConnection.sendDataToDevice(message);
+                }
                 break;
-            case R.id.read:
-                break;
+            case R.id.disconnect:
+                if (deviceConnection != null) {
+                    deviceConnection.disconnectDevice();
+                }
             default:
                 break;
         }
     }
 
+
     @Override
     public void deviceConnectInfo(DeviceData deviceData, boolean isConnect) {
         Log.d("ここ", "接続した端末" + deviceData.getDeviceAddress());
+        deviceConnection.connectDevice(deviceData.getDeviceAddress());
     }
 
     @Override
     public void deviceConnectSendInfo(DeviceData deviceData) {
-
+        Log.d("ここ" , deviceData.getDeviceAddress());
     }
 
     @Override
     public void deviceConnectSendReceiveData(String message) {
-
+        BleData bleData = new BleData(message, "受信", "", "");
+        bleDataArrayList.add(bleData);
+        bleRecyclerAdapter.setbleDataArrayList(bleDataArrayList);
+        bleRecyclerAdapter.notifyDataSetChanged();
+        recyclerView.smoothScrollToPosition(bleDataArrayList.size() - 1);
     }
 
     @Override
@@ -184,8 +202,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void deviceConnectError(ErrorParcelable errorParcelable) {
-        Log.d("ここ", "エラー" + errorParcelable.getErrorMessage());
+    public void deviceConnectError(Error error) {
+        Log.d("ここ", "deviceConnectError エラー" + error.getErrorMessage());
+    }
+
+
+    @Override
+    public void deviceCommunicationReceiveData(String data) {
+    }
+
+    @Override
+    public void deviceCommunicationSendData(String data) {
+        BleData bleData = new BleData(data, "送信", "", "");
+        bleDataArrayList.add(bleData);
+        bleRecyclerAdapter.setbleDataArrayList(bleDataArrayList);
+        bleRecyclerAdapter.notifyDataSetChanged();
+        recyclerView.smoothScrollToPosition(bleDataArrayList.size() - 1);
+    }
+
+    @Override
+    public void deviceCommunicationConnected(boolean isConnected) {
+        Log.d("ここ", "結果" + isConnected);
+    }
+
+    @Override
+    public void deviceCommunicationError(Error error) {
+        Log.d("ここ", "deviceCommunicationError エラー" + error.getErrorMessage());
     }
 
 }

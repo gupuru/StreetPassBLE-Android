@@ -17,6 +17,7 @@
         android:layout_height="wrap_content"
         android:text="BLEに対応していない端末です。"/>
 
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -38,20 +39,25 @@
             android:text="ストップ" />
 
         <Button
-            android:id="@+id/read"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="よみこむ" />
-
-        <Button
             android:id="@+id/send"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="そうしん" />
 
+        <Button
+            android:id="@+id/disconnect"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="せつだん" />
+
     </LinearLayout>
+
+    <EditText android:id="@+id/edit"
+        android:layout_width="match_parent"
+        android:hint="なにか入れて、そうしん押して"
+        android:layout_height="wrap_content" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view"
