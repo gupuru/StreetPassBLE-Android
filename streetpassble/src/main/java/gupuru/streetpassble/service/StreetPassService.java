@@ -27,8 +27,7 @@ import java.util.UUID;
 import gupuru.streetpassble.callback.AdvertiseBle;
 import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.constants.Settings;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 import gupuru.streetpassble.reciver.StreetPassServiceReceiver;
 import gupuru.streetpassble.server.BLEGattServer;
@@ -51,7 +50,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     private BLEServer bleServer;
     private BLEGattServer bleGattServer;
     private StreetPassServiceUtil streetPassServiceUtil;
-
+    private BluetoothGatt bluetoothGatt;
 
     public StreetPassService() {
     }
@@ -63,8 +62,6 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         context = getApplicationContext();
 
         streetPassServiceUtil = new StreetPassServiceUtil();
-        bleServer = new BLEServer();
-        bleServer.setOnBLEServerListener(this);
 
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
 
@@ -79,6 +76,8 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         intentFilter.addAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
         intentFilter.addAction(Constants.ACTION_OPEN_GATT);
         intentFilter.addAction(Constants.ACTION_CLOSE_GATT);
+        intentFilter.addAction(Constants.ACTION_START_STOP_SCAN);
+        intentFilter.addAction(Constants.ACTION_DISCONNECT_DEVICE);
         registerReceiver(streetPassServiceReceiver, intentFilter);
     }
 
@@ -89,6 +88,9 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
             //StreetPassSettings取得
             streetPassSettings = intent.getParcelableExtra(Constants.STREET_PASS_SETTINGS);
             if (intent.getBooleanExtra(Constants.CAN_CONNECT, false)) {
+                bleServer = new BLEServer(streetPassSettings.getServiceUuid()
+                        , streetPassSettings.getCharacteristicUuid());
+                bleServer.setOnBLEServerListener(this);
                 openGattServer();
             }
             //BLEの送信に対応しているか
@@ -106,10 +108,8 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
 
     @Override
     public void onDestroy() {
-        if (scanBle != null && bluetoothLeScanner != null) {
-            bluetoothLeScanner.stopScan(scanBle);
-            bluetoothLeScanner = null;
-        }
+        //scan停止
+        stopScan();
         if (bluetoothLeAdvertiser != null && advertiseBle != null) {
             bluetoothLeAdvertiser.stopAdvertising(advertiseBle);
             bluetoothLeAdvertiser = null;
@@ -148,10 +148,10 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         bleGattServer.setBluetoothGattServer(gattServer);
         //Serviceを登録
         BluetoothGattService service = new BluetoothGattService(
-                UUID.fromString(Settings.SERVICE_UUID),
+                UUID.fromString(streetPassSettings.getServiceUuid()),
                 BluetoothGattService.SERVICE_TYPE_PRIMARY);
         BluetoothGattCharacteristic mCharacteristic = new BluetoothGattCharacteristic(
-                UUID.fromString(Settings.CHARACTERISTIC_UUID),
+                UUID.fromString(streetPassSettings.getCharacteristicUuid()),
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY |
                         BluetoothGattCharacteristic.PROPERTY_READ |
                         BluetoothGattCharacteristic.PROPERTY_WRITE,
@@ -161,6 +161,9 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         gattServer.addService(service);
     }
 
+    /**
+     * BLE scan開始
+     */
     private void scan() {
         if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
             List<ScanFilter> filters = new ArrayList<>();
@@ -175,7 +178,22 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
 
             scanBle = new ScanBle(context);
 
+            if (bluetoothLeScanner == null) {
+                bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+            }
+
             bluetoothLeScanner.startScan(filters, settings, scanBle);
+        }
+    }
+
+    /**
+     * BLE scan停止
+     */
+    private void stopScan(){
+        if (scanBle != null && bluetoothLeScanner != null) {
+            bluetoothLeScanner.stopScan(scanBle);
+            bluetoothLeScanner = null;
+            scanBle = null;
         }
     }
 
@@ -220,7 +238,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         if (deviceAddress != null && !deviceAddress.equals("")) {
             if (bleServer != null) {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-                BluetoothGatt bluetoothGatt = device.connectGatt(context, true, bleServer);
+                bluetoothGatt = device.connectGatt(context, false, bleServer);
                 bluetoothGatt.connect();
             }
         }
@@ -228,12 +246,35 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
 
     @Override
     public void onSendData(String data) {
-        bleServer.writeData(data);
+        if (bleServer != null) {
+            bleServer.writeData(data);
+        }
     }
 
     @Override
     public void onClose() {
         closeGattServer();
+    }
+
+    @Override
+    public void onIsScanStart(boolean flg) {
+        if (flg) {
+            //scan開始
+            if(scanBle == null && bluetoothLeScanner == null) {
+                scan();
+            }
+        } else {
+            //scan停止
+            stopScan();
+        }
+    }
+
+    @Override
+    public void onDisconnectDevice() {
+        if (bluetoothGatt != null) {
+            bluetoothGatt.close();
+            bluetoothGatt = null;
+        }
     }
 
     //endregion
@@ -302,10 +343,10 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     }
 
     @Override
-    public void onBLEServerError(ErrorParcelable errorParcelable) {
+    public void onBLEServerError(Error error) {
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_BLE_SERVER_ERROR);
-        intent.putExtra(Constants.BLE_SERVER_ERROR, errorParcelable);
+        intent.putExtra(Constants.BLE_SERVER_ERROR, error);
         context.sendBroadcast(intent);
     }
 

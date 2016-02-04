@@ -7,7 +7,7 @@ import android.content.IntentFilter;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.reciver.StreetPassGattServerReceiver;
 
 public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPassGattServerListener {
@@ -32,7 +32,7 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
 
         void deviceConnectOpenServer(boolean result);
 
-        void deviceConnectError(ErrorParcelable errorParcelable);
+        void deviceConnectError(Error error);
     }
 
     public interface OnDeviceCommunicationListener {
@@ -42,7 +42,7 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
 
         void deviceCommunicationConnected(boolean isConnected);
 
-        void deviceCommunicationError(ErrorParcelable errorParcelable);
+        void deviceCommunicationError(Error error);
     }
 
     public void setOnStreetPassListener(OnDeviceConnectionListener onDeviceConnectionListener) {
@@ -53,12 +53,18 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
         this.onDeviceCommunicationListener = onDeviceCommunicationListener;
     }
 
+    /**
+     * GATTサーバーたてる
+     */
     public void open() {
         //Receiver登録
         initStreetPassGattServerReceiver();
         context.registerReceiver(streetPassGattServerReceiver, streetPassGattServerIntentFilter);
     }
 
+    /**
+     * GATTサーバー閉じる
+     */
     public void close() {
         //broadcast送信
         Intent intent = new Intent();
@@ -81,6 +87,15 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
     }
 
     /**
+     * 端末の接続をきる
+     */
+    public void disconnectDevice() {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_DISCONNECT_DEVICE);
+        context.sendBroadcast(intent);
+    }
+
+    /**
      * 端末にStringのデータを送信する
      *
      * @param data
@@ -92,6 +107,9 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
         context.sendBroadcast(intent);
     }
 
+    /**
+     * Receiver登録
+     */
     private void initStreetPassGattServerReceiver() {
         streetPassGattServerReceiver = new StreetPassGattServerReceiver();
         streetPassGattServerReceiver.setOnStreetPassGattServerListener(this);
@@ -114,8 +132,8 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
             context.unregisterReceiver(streetPassGattServerReceiver);
             streetPassGattServerReceiver = null;
         } catch (IllegalArgumentException e) {
-            ErrorParcelable errorParcelable = new ErrorParcelable(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onDeviceConnectionListener.deviceConnectError(errorParcelable);
+            Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
+            onDeviceConnectionListener.deviceConnectError(error);
         }
     }
 
@@ -161,8 +179,8 @@ public class DeviceConnection implements StreetPassGattServerReceiver.OnStreetPa
     }
 
     @Override
-    public void onBLEServerError(ErrorParcelable errorParcelable) {
-        onDeviceCommunicationListener.deviceCommunicationError(errorParcelable);
+    public void onBLEServerError(Error error) {
+        onDeviceCommunicationListener.deviceCommunicationError(error);
     }
 
     //endregion

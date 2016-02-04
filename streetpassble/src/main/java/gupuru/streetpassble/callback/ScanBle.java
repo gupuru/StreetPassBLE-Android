@@ -12,7 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.DeviceData;
 
 public class ScanBle extends ScanCallback {
@@ -86,11 +86,11 @@ public class ScanBle extends ScanCallback {
                 break;
         }
 
-        ErrorParcelable errorParcelable = new ErrorParcelable(errorCode, errorMessage);
+        Error error = new Error(errorCode, errorMessage);
 
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
-        intent.putExtra(Constants.ERROR_SCAN_ADV, errorParcelable);
+        intent.putExtra(Constants.ERROR_SCAN_ADV, error);
         context.sendBroadcast(intent);
     }
 

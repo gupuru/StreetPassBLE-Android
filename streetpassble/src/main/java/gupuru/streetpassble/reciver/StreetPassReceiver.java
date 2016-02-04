@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.AdvertiseSuccess;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.DeviceData;
 
 public class StreetPassReceiver extends BroadcastReceiver {
@@ -20,9 +20,9 @@ public class StreetPassReceiver extends BroadcastReceiver {
     public interface OnStreetPassReceiverListener {
         void onStreetPassScanResult(DeviceData deviceData);
 
-        void onStreetPassAdvertiseResult(AdvertiseSuccessParcelable advertiseSuccessParcelable);
+        void onStreetPassAdvertiseResult(AdvertiseSuccess advertiseSuccess);
 
-        void onStreetPassError(ErrorParcelable errorParcelable);
+        void onStreetPassError(Error error);
     }
 
     public void setOnStreetPassReceiverListener(OnStreetPassReceiverListener onStreetPassReceiverListener) {
@@ -39,16 +39,16 @@ public class StreetPassReceiver extends BroadcastReceiver {
                 onStreetPassReceiverListener.onStreetPassScanResult(deviceData);
             }
         } else if (Constants.ACTION_ADV.equals(action)) {
-            AdvertiseSuccessParcelable advertiseSuccessParcelable
-                    = (AdvertiseSuccessParcelable) intent.getExtras().get(Constants.ADV_DATA);
-            if (advertiseSuccessParcelable != null) {
-                onStreetPassReceiverListener.onStreetPassAdvertiseResult(advertiseSuccessParcelable);
+            AdvertiseSuccess advertiseSuccess
+                    = (AdvertiseSuccess) intent.getExtras().get(Constants.ADV_DATA);
+            if (advertiseSuccess != null) {
+                onStreetPassReceiverListener.onStreetPassAdvertiseResult(advertiseSuccess);
             }
         } else if (Constants.ACTION_SCAN_ADV_ERROR.equals(action)) {
-            ErrorParcelable errorParcelable
-                    = (ErrorParcelable) intent.getExtras().get(Constants.ERROR_SCAN_ADV);
-            if (errorParcelable != null) {
-                onStreetPassReceiverListener.onStreetPassError(errorParcelable);
+            Error error
+                    = (Error) intent.getExtras().get(Constants.ERROR_SCAN_ADV);
+            if (error != null) {
+                onStreetPassReceiverListener.onStreetPassError(error);
             }
         }
     }

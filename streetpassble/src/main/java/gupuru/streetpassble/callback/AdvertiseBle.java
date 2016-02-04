@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.AdvertiseSuccessParcelable;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.AdvertiseSuccess;
+import gupuru.streetpassble.parcelable.Error;
 
 public class AdvertiseBle extends AdvertiseCallback {
 
@@ -21,7 +21,7 @@ public class AdvertiseBle extends AdvertiseCallback {
     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         super.onStartSuccess(settingsInEffect);
 
-        AdvertiseSuccessParcelable advertiseSuccessParcelable = new AdvertiseSuccessParcelable(
+        AdvertiseSuccess advertiseSuccess = new AdvertiseSuccess(
                 settingsInEffect.getTxPowerLevel(),
                 settingsInEffect.getMode(),
                 settingsInEffect.getTimeout()
@@ -29,7 +29,7 @@ public class AdvertiseBle extends AdvertiseCallback {
 
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_ADV);
-        intent.putExtra(Constants.ADV_DATA, advertiseSuccessParcelable);
+        intent.putExtra(Constants.ADV_DATA, advertiseSuccess);
         context.sendBroadcast(intent);
     }
 
@@ -55,11 +55,11 @@ public class AdvertiseBle extends AdvertiseCallback {
                 break;
         }
 
-        ErrorParcelable errorParcelable = new ErrorParcelable(errorCode, errorMessage);
+        Error error = new Error(errorCode, errorMessage);
 
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
-        intent.putExtra(Constants.ERROR_SCAN_ADV, errorParcelable);
+        intent.putExtra(Constants.ERROR_SCAN_ADV, error);
         context.sendBroadcast(intent);
     }
 

@@ -6,7 +6,7 @@ import android.content.Intent;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.Error;
 
 /**
  * GATTサーバーのレシーバー BroadcastReceiver
@@ -33,7 +33,7 @@ public class StreetPassGattServerReceiver extends BroadcastReceiver {
 
         void onBLEConnected(boolean result);
 
-        void onBLEServerError(ErrorParcelable errorParcelable);
+        void onBLEServerError(Error error);
     }
 
     public void setOnStreetPassGattServerListener(OnStreetPassGattServerListener onStreetPassGattServerListener) {
@@ -80,7 +80,7 @@ public class StreetPassGattServerReceiver extends BroadcastReceiver {
             );
         } else if (Constants.ACTION_BLE_SERVER_ERROR.equals(action)){
             onStreetPassGattServerListener.onBLEServerError(
-                    (ErrorParcelable) intent.getExtras().get(Constants.BLE_SERVER_ERROR)
+                    (Error) intent.getExtras().get(Constants.BLE_SERVER_ERROR)
             );
         }
     }

@@ -11,9 +11,11 @@ public class Constants {
     public static final String ACTION_GATT_SERVER_WRITE_REQUEST = "street.pass.action_gatt_server_write_request";
     public static final String ACTION_GATT_SERVER_READ_REQUEST = "street.pass.action_gatt_server_read_request";
     public static final String ACTION_GATT_SERVICE_ADDED = "street.pass.action_gatt_service_added";
+    public static final String ACTION_START_STOP_SCAN = "street.pass.start_stop_scan";
     public static final String ACTION_SCAN_ADV_ERROR = "street.pass.scan_adv_error";
     public static final String ACTION_ADV = "street.pass.action_adv";
     public static final String ACTION_CONNECT_DEVICE = "street.pass.connect_device";
+    public static final String ACTION_DISCONNECT_DEVICE = "street.pass.disconnect_device";
     public static final String ACTION_CLOSE_GATT = "street.pass.close_gatt";
     public static final String ACTION_OPEN_GATT = "street.pass.open_gatt";
     public static final String ACTION_SEND_DATA_TO_DEVICE = "street.pass.send_data_to_device";

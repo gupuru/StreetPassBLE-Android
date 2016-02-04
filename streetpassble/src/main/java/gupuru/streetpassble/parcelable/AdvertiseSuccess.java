@@ -3,7 +3,7 @@ package gupuru.streetpassble.parcelable;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class AdvertiseSuccessParcelable implements Parcelable {
+public class AdvertiseSuccess implements Parcelable {
 
     protected int txPowerLevel;
     protected int mode;
@@ -21,24 +21,24 @@ public class AdvertiseSuccessParcelable implements Parcelable {
         out.writeInt(timeOut);
     }
 
-    public static final Parcelable.Creator<AdvertiseSuccessParcelable> CREATOR
-            = new Parcelable.Creator<AdvertiseSuccessParcelable>() {
-        public AdvertiseSuccessParcelable createFromParcel(Parcel in) {
-            return new AdvertiseSuccessParcelable(in);
+    public static final Parcelable.Creator<AdvertiseSuccess> CREATOR
+            = new Parcelable.Creator<AdvertiseSuccess>() {
+        public AdvertiseSuccess createFromParcel(Parcel in) {
+            return new AdvertiseSuccess(in);
         }
 
-        public AdvertiseSuccessParcelable[] newArray(int size) {
-            return new AdvertiseSuccessParcelable[size];
+        public AdvertiseSuccess[] newArray(int size) {
+            return new AdvertiseSuccess[size];
         }
     };
 
-    public AdvertiseSuccessParcelable(int txPowerLevel, int mode, int timeOut){
+    public AdvertiseSuccess(int txPowerLevel, int mode, int timeOut){
         this.txPowerLevel = txPowerLevel;
         this.mode = mode;
         this.timeOut = timeOut;
     }
 
-    private AdvertiseSuccessParcelable(Parcel in) {
+    private AdvertiseSuccess(Parcel in) {
         txPowerLevel = in.readInt();
         mode = in.readInt();
         timeOut = in.readInt();

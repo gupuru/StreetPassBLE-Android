@@ -20,6 +20,10 @@ public class StreetPassServiceReceiver extends BroadcastReceiver {
         void onSendData(String data);
 
         void onClose();
+
+        void onIsScanStart(boolean flg);
+
+        void onDisconnectDevice();
     }
 
     public void setOnStreetPassServiceReceiverListener(OnStreetPassServiceReceiverListener onStreetPassServiceReceiverListener) {
@@ -41,6 +45,11 @@ public class StreetPassServiceReceiver extends BroadcastReceiver {
             }
         } else if (Constants.ACTION_CLOSE_GATT.equals(action)) {
             onStreetPassServiceReceiverListener.onClose();
+        } else if (Constants.ACTION_START_STOP_SCAN.equals(action)){
+            boolean isStart = intent.getBooleanExtra(Constants.DATA, false);
+            onStreetPassServiceReceiverListener.onIsScanStart(isStart);
+        } else if (Constants.ACTION_DISCONNECT_DEVICE.equals(action)) {
+            onStreetPassServiceReceiverListener.onDisconnectDevice();
         }
     }
 

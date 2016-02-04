@@ -6,12 +6,11 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.util.Log;
 
 import java.util.UUID;
 
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.ErrorParcelable;
+import gupuru.streetpassble.parcelable.Error;
 
 public class BLEServer extends BluetoothGattCallback {
 
@@ -20,7 +19,9 @@ public class BLEServer extends BluetoothGattCallback {
     private String characteristicUuid;
     private OnBLEServerListener onBLEServerListener;
 
-    public BLEServer() {
+    public BLEServer(String serviceUuid, String characteristicUuid) {
+        this.serviceUuid = serviceUuid;
+        this.characteristicUuid = characteristicUuid;
     }
 
     public interface OnBLEServerListener {
@@ -30,15 +31,15 @@ public class BLEServer extends BluetoothGattCallback {
 
         void onConnected(boolean result);
 
-        void onBLEServerError(ErrorParcelable errorParcelable);
+        void onBLEServerError(Error error);
     }
 
     public void setOnBLEServerListener(OnBLEServerListener onBLEServerListener) {
         this.onBLEServerListener = onBLEServerListener;
     }
 
-    private ErrorParcelable getErrorParcelable(String message) {
-        return new ErrorParcelable(Constants.CODE_BLE_SERVER_ERROR, message);
+    private Error getErrorParcelable(String message) {
+        return new Error(Constants.CODE_BLE_SERVER_ERROR, message);
     }
 
     public void writeData(String message) {
@@ -61,12 +62,22 @@ public class BLEServer extends BluetoothGattCallback {
     }
 
     private BluetoothGattCharacteristic getCharacteristicData(String sid, String cid) {
-        BluetoothGattService s = bluetoothGatt.getService(UUID.fromString(sid));
-        if (s == null) {
+        if (bluetoothGatt == null || bluetoothGatt.getServices() == null) {
+            onBLEServerListener.onBLEServerError(getErrorParcelable("接続されていません"));
+            return null;
+        }
+        BluetoothGattService bluetoothGattService;
+        try {
+            bluetoothGattService = bluetoothGatt.getService(UUID.fromString(sid));
+        } catch (NullPointerException e) {
+            onBLEServerListener.onBLEServerError(getErrorParcelable("uuidがnullです。"));
+            return null;
+        }
+        if (bluetoothGattService == null) {
             onBLEServerListener.onBLEServerError(getErrorParcelable("Service uuidがnullです。"));
             return null;
         }
-        BluetoothGattCharacteristic c = s.getCharacteristic(UUID.fromString(cid));
+        BluetoothGattCharacteristic c = bluetoothGattService.getCharacteristic(UUID.fromString(cid));
         if (c == null) {
             onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
             return null;
@@ -107,8 +118,6 @@ public class BLEServer extends BluetoothGattCallback {
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-        byte[] data = characteristic.getValue();
-        Log.d("ここ", "onCharacteristicChanged" + data.toString());
     }
 
     @Override

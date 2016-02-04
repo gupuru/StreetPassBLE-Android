@@ -83,8 +83,8 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                                             int offset, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
         if (bluetoothGattServer != null) {
-            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, defaultSendResponseData.getBytes());
             onBLEGattServerListener.onCharacteristicReadRequest(device);
+            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, defaultSendResponseData.getBytes());
         }
     }
 
@@ -104,7 +104,8 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                                              BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded,
                                              int offset, byte[] value) {
         super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-        if (bluetoothGattServer != null) {
+        if (bluetoothGattServer != null && value != null) {
+            characteristic.setValue(value);
             String message = characteristic.getStringValue(offset);
             onBLEGattServerListener.onCharacteristicWriteRequest(message);
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
