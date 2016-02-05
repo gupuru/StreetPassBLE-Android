@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">StreetPass</string>
+    <string name="default_status_message">BLEに対応していない端末です。</string>
+    <string name="send_receive_status_message">送受信可能です。</string>
+    <string name="receive_status_message">受信のみ可能です。</string>
+    <string name="receiving_status_message">受信しています&#8230;</string>
+    <string name="sending_status_message">送信しています&#8230;</string>
+    <string name="starting_status_message">準備中です&#8230;</string>
+    <string name="stop_status_message">停止しました。</string>
+    <string name="test_message">test</string>
+    <string name="no_name">Unnamed</string>
+    <string name="start">開始</string>
+    <string name="stop">停止</string>
+    <string name="versioin_title">バージョン</string>
+    <string name="contact_title">連絡先</string>
+    <string name="contact_message">email: origami.magic789@gmail.com\n\ntwitter: @gupuru</string>
+    <string name="alert_positive_button">閉じる</string>
+    <string name="menu_contact">連絡先</string>
+    <string name="menu_version">バージョン</string>
+    <string name="open_server_status_message">接続:OK</string>
+    <string name="close_server_status_message">接続:NG</string>
 </resources>

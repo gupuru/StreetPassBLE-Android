@@ -1,6 +1,7 @@
 package gupuru.streetpass.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,23 +11,29 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import gupuru.streetpass.R;
+import gupuru.streetpass.activity.ChatActivity;
 import gupuru.streetpass.bean.BleData;
-import gupuru.streetpassble.DeviceConnection;
+import gupuru.streetpassble.ConnectDevice;
 
 public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.ViewHolder> {
 
     private Context context;
     private ArrayList<BleData> bleDataArrayList;
-    private DeviceConnection deviceConnection;
+    private boolean isOpenServer = false;
+    private ConnectDevice connectDevice;
 
-    public BleRecyclerAdapter(Context context, ArrayList<BleData> bleDataArrayList, DeviceConnection deviceConnection) {
+    public BleRecyclerAdapter(Context context, ConnectDevice connectDevice, ArrayList<BleData> bleDataArrayList) {
         this.context = context;
         this.bleDataArrayList = bleDataArrayList;
-        this.deviceConnection = deviceConnection;
+        this.connectDevice = connectDevice;
     }
 
     public void setbleDataArrayList(ArrayList<BleData> bleDataArrayList) {
         this.bleDataArrayList = bleDataArrayList;
+    }
+
+    public void setIsOpenServer(boolean isOpenServer) {
+        this.isOpenServer = isOpenServer;
     }
 
     public void clear() {
@@ -54,7 +61,13 @@ public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.
         v.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                deviceConnection.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
+                if (isOpenServer) {
+                    connectDevice.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
+                    Intent intent = new Intent(context, ChatActivity.class);
+                    intent.putExtra("device", bleDataArrayList.get(i).getDeviceAddress());
+                    intent.setAction(Intent.ACTION_VIEW);
+                    context.startActivity(intent);
+                }
             }
         });
 
