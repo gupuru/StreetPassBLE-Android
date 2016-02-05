@@ -30,11 +30,11 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     }
 
     public interface OnStreetPassListener {
-        void streetPassResult(DeviceData deviceData);
+        void onDataReceived(DeviceData deviceData);
 
-        void advertiseSuccess(AdvertiseSuccess advertiseSuccess);
+        void onAdvertiseResult(AdvertiseSuccess advertiseSuccess);
 
-        void error(Error error);
+        void onError(Error error);
     }
 
     public void setOnStreetPassListener(OnStreetPassListener onStreetPassListener) {
@@ -224,7 +224,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
             context.unregisterReceiver(streetPassReceiver);
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onStreetPassListener.error(error);
+            onStreetPassListener.onError(error);
         }
     }
 
@@ -234,17 +234,17 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     @Override
     public void onStreetPassScanResult(DeviceData deviceData) {
-        onStreetPassListener.streetPassResult(deviceData);
+        onStreetPassListener.onDataReceived(deviceData);
     }
 
     @Override
     public void onStreetPassAdvertiseResult(AdvertiseSuccess advertiseSuccess) {
-        onStreetPassListener.advertiseSuccess(advertiseSuccess);
+        onStreetPassListener.onAdvertiseResult(advertiseSuccess);
     }
 
     @Override
     public void onStreetPassError(Error error) {
-        onStreetPassListener.error(error);
+        onStreetPassListener.onError(error);
     }
 
     //endregion
@@ -262,6 +262,18 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
         intent.setAction(action);
         intent.putExtra(name, flg);
         context.sendBroadcast(intent);
+    }
+
+    //endregion
+
+    //region Sub Methods
+
+    /**
+     * ライブラリのバージョン取得
+     * @return
+     */
+    public String getLibraryVersion() {
+        return "0.0.6";
     }
 
     //endregion

@@ -290,14 +290,6 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     }
 
     @Override
-    public void onCharacteristicReadRequest(BluetoothDevice device) {
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_GATT_SERVER_READ_REQUEST);
-        intent.putExtra(Constants.READ_REQUEST, streetPassServiceUtil.getDeviceData(device));
-        context.sendBroadcast(intent);
-    }
-
-    @Override
     public void onCharacteristicWriteRequest(String message) {
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_GATT_SERVER_WRITE_REQUEST);
