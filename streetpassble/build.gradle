@@ -7,7 +7,7 @@ uploadArchives {
     repositories {
         mavenDeployer {
             repository url: "file://${repo.absolutePath}"
-            pom.version = '0.0.6'
+            pom.version = '0.0.7'
             pom.groupId = 'gupuru'
             pom.artifactId = 'streetpassble'
         }
