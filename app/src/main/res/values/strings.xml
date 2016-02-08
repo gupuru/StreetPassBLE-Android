@@ -8,6 +8,7 @@
     <string name="sending_status_message">送信しています&#8230;</string>
     <string name="starting_status_message">準備中です&#8230;</string>
     <string name="stop_status_message">停止しました。</string>
+    <string name="connected_device_message">接続しました。</string>
     <string name="test_message">test</string>
     <string name="no_name">Unnamed</string>
     <string name="start">開始</string>

@@ -113,6 +113,7 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
         }
         ChatData chatData = new ChatData(message, isMe);
         chatRecyclerAdapter.add(chatData);
+        recyclerView.smoothScrollToPosition(chatRecyclerAdapter.getDataSize());
         chatRecyclerAdapter.notifyDataSetChanged();
     }
 
@@ -127,6 +128,9 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
      */
     @Override
     public void connectedDeviceInitialMessage(String message) {
+        if (message != null) {
+            addMessage(message, false);
+        }
         sendBtn.setEnabled(true);
         showToast(getString(R.string.cant_send_data));
     }
@@ -149,8 +153,6 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
     @Override
     public void dataTransferSendMessage(String message) {
         addMessage(message, true);
-        recyclerView.smoothScrollToPosition(chatRecyclerAdapter.getDataSize());
-        chatRecyclerAdapter.notifyDataSetChanged();
     }
 
     /**
@@ -161,8 +163,6 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
     @Override
     public void dataTransferReceiveMessage(String message) {
         addMessage(message, false);
-        recyclerView.smoothScrollToPosition(chatRecyclerAdapter.getDataSize());
-        chatRecyclerAdapter.notifyDataSetChanged();
     }
 
     /**
