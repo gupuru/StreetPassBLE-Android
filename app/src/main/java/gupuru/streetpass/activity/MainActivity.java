@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean isC = false;
     @Override
     public void onConnectedResult(boolean isConnected) {
-        connectStatusTextView.setText("ふほほ接続完了した");
+        connectStatusTextView.setText(getString(R.string.connected_device_message));
         isC = isConnected;
     }
 
@@ -232,9 +232,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 streetPassSettings.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
                 streetPassSettings.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
                 streetPassSettings.setAdvertiseConnectable(true);
-                streetPassSettings.setAdvertiseIncludeDeviceName(false);
-                streetPassSettings.setAdvertiseIncludeTxPowerLevel(false);
+                streetPassSettings.setAdvertiseIncludeDeviceName(true);
+                streetPassSettings.setAdvertiseIncludeTxPowerLevel(true);
                 streetPassSettings.setServiceUuid(Constants.SERVICE_UUID);
+                streetPassSettings.setDefaultResponseData("first");
                 streetPassSettings.setData(getString(R.string.test_message));
                 streetPassBle.start(streetPassSettings, true);
                 break;

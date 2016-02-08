@@ -146,6 +146,12 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         bleGattServer.setOnBLEGattServerListener(this);
         gattServer = manager.openGattServer(context, bleGattServer);
         bleGattServer.setBluetoothGattServer(gattServer);
+        //初期メッセージ登録
+        String defaultData = streetPassSettings.getDefaultResponseData();
+        if (streetPassServiceUtil.isLimitDataSize(defaultData)) {
+            defaultData = streetPassServiceUtil.trimByte(defaultData, 20, "UTF-8");
+        }
+        bleGattServer.setDefaultSendResponseData(defaultData);
         //Serviceを登録
         BluetoothGattService service = new BluetoothGattService(
                 UUID.fromString(streetPassSettings.getServiceUuid()),

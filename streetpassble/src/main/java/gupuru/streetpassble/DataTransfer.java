@@ -65,6 +65,14 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
     }
 
     /**
+     * 端末の接続を切断
+     */
+    public void disconnectDevice() {
+        //broadcast送信
+        updateBroadCast(Constants.ACTION_DISCONNECT_DEVICE);
+    }
+
+    /**
      * 端末にStringのデータを送信する
      *
      * @param data
