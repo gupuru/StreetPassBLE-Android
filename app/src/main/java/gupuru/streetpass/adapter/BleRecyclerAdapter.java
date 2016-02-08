@@ -61,13 +61,7 @@ public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.
         v.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isOpenServer) {
-                    connectDevice.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
-                    Intent intent = new Intent(context, ChatActivity.class);
-                    intent.putExtra("device", bleDataArrayList.get(i).getDeviceAddress());
-                    intent.setAction(Intent.ACTION_VIEW);
-                    context.startActivity(intent);
-                }
+             /*   streetPassBle.connectDevice(bleDataArrayList.get(i).getDeviceAddress(), "00002a29-0000-1000-8000-00805f9b34fb");*/
             }
         });
 
