@@ -22,13 +22,13 @@ public class ConnectDevice implements ConnectDeviceReceiver.OnConnectDeviceRecei
     }
 
     public interface OnConnectDeviceListener {
-        void onDeviceConnectResult(DeviceData deviceData, boolean isConnect);
+        void onConnectedDeviceData(DeviceData deviceData);
 
-        void onOpenServer(boolean result);
+        void onConnectedResult(boolean isConnected);
 
-        void onDeviceConnectError(Error error);
+        void onConnectedError(Error error);
 
-        void deviceCommunicationConnected(boolean isConnected);
+        void canConnect(boolean result);
     }
 
     public void setOnConnectDeviceListener(OnConnectDeviceListener onConnectDeviceListener) {
@@ -79,23 +79,23 @@ public class ConnectDevice implements ConnectDeviceReceiver.OnConnectDeviceRecei
             connectDeviceReceiver = null;
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onConnectDeviceListener.onDeviceConnectError(error);
+            onConnectDeviceListener.onConnectedError(error);
         }
     }
 
     @Override
     public void onStreetPassServiceAdded(boolean result) {
-        onConnectDeviceListener.onOpenServer(result);
+        onConnectDeviceListener.canConnect(result);
     }
 
     @Override
     public void onStreetPassGattServerStateChange(DeviceData deviceData, boolean isConnect) {
-        onConnectDeviceListener.onDeviceConnectResult(deviceData, isConnect);
+        onConnectDeviceListener.onConnectedDeviceData(deviceData);
     }
 
     @Override
     public void onBLEConnected(boolean result) {
-        onConnectDeviceListener.deviceCommunicationConnected(result);
+        onConnectDeviceListener.onConnectedResult(result);
     }
 
 }

@@ -211,8 +211,8 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
             if (serviceData == null) {
                 serviceData = "";
             } else {
-                if (serviceData.getBytes().length > 20) {
-                    serviceData = serviceData.substring(0, 6);
+                if (streetPassServiceUtil.isLimitDataSize(serviceData)) {
+                    serviceData = streetPassServiceUtil.trimByte(serviceData, 20, "UTF-8");
                 }
             }
 
@@ -247,7 +247,11 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     @Override
     public void onSendData(String data) {
         if (bleServer != null) {
-            bleServer.writeData(data);
+            if (streetPassServiceUtil.isLimitDataSize(data)) {
+                bleServer.writeData(streetPassServiceUtil.trimByte(data, 20, "UTF-8"));
+            } else {
+                bleServer.writeData(data);
+            }
         }
     }
 

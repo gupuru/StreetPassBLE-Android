@@ -15,33 +15,33 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
     private StreetPassGattServerReceiver streetPassGattServerReceiver;
     private IntentFilter streetPassGattServerIntentFilter;
 
-    private OnDeviceConnectionListener onDeviceConnectionListener;
-    private OnDeviceCommunicationListener onDeviceCommunicationListener;
+    private OnConnectedDeviceInitialInfoListener onConnectedDeviceInitialInfoListener;
+    private OnDataTransferListener onDataTransferListener;
 
     public DataTransfer(Context context) {
         this.context = context;
     }
 
-    public interface OnDeviceConnectionListener {
-        void deviceConnectSendReceiveData(String message);
+    public interface OnConnectedDeviceInitialInfoListener {
+        void connectedDeviceInitialMessage(String message);
 
-        void deviceConnectError(Error error);
+        void connectedDeviceError(Error error);
     }
 
-    public interface OnDeviceCommunicationListener {
-        void deviceCommunicationReceiveData(String data);
+    public interface OnDataTransferListener {
+        void dataTransferSendMessage(String message);
 
-        void deviceCommunicationSendData(String data);
+        void dataTransferReceiveMessage(String message);
 
-        void deviceCommunicationError(Error error);
+        void dataTransferError(Error error);
     }
 
-    public void setOnDeviceConnectionListener(OnDeviceConnectionListener onDeviceConnectionListener) {
-        this.onDeviceConnectionListener = onDeviceConnectionListener;
+    public void setOnConnectedDeviceInitialInfoListener(OnConnectedDeviceInitialInfoListener onConnectedDeviceInitialInfoListener) {
+        this.onConnectedDeviceInitialInfoListener = onConnectedDeviceInitialInfoListener;
     }
 
-    public void setOnDeviceCommunicationListener(OnDeviceCommunicationListener onDeviceCommunicationListener) {
-        this.onDeviceCommunicationListener = onDeviceCommunicationListener;
+    public void setOnDataTransferListener(OnDataTransferListener onDataTransferListener) {
+        this.onDataTransferListener = onDataTransferListener;
     }
 
     /**
@@ -57,21 +57,11 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
      * GATTサーバー閉じる
      */
     public void close() {
-        //broadcast送信
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_CLOSE_GATT);
-        context.sendBroadcast(intent);
         //レシーバー解除
         unregisterStreetPassReceiver();
-    }
-
-    /**
-     * 端末の接続をきる
-     */
-    public void disconnectDevice() {
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_DISCONNECT_DEVICE);
-        context.sendBroadcast(intent);
+        //broadcast送信
+        updateBroadCast(Constants.ACTION_DISCONNECT_DEVICE);
+        updateBroadCast(Constants.ACTION_CLOSE_GATT);
     }
 
     /**
@@ -83,6 +73,16 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_SEND_DATA_TO_DEVICE);
         intent.putExtra(Constants.DATA, data);
+        context.sendBroadcast(intent);
+    }
+
+    /**
+     * BroadCast送信
+     * @param action
+     */
+    private void updateBroadCast(String action) {
+        Intent intent = new Intent();
+        intent.setAction(action);
         context.sendBroadcast(intent);
     }
 
@@ -109,7 +109,7 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
             streetPassGattServerReceiver = null;
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onDeviceConnectionListener.deviceConnectError(error);
+            onConnectedDeviceInitialInfoListener.connectedDeviceError(error);
         }
     }
 
@@ -117,7 +117,7 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
 
     @Override
     public void onStreetPassGattServerWrite(String message) {
-        onDeviceConnectionListener.deviceConnectSendReceiveData(message);
+        onDataTransferListener.dataTransferReceiveMessage(message);
     }
 
     //endregion
@@ -126,17 +126,17 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
 
     @Override
     public void onBLEServerRead(String data) {
-        onDeviceCommunicationListener.deviceCommunicationReceiveData(data);
+        onConnectedDeviceInitialInfoListener.connectedDeviceInitialMessage(data);
     }
 
     @Override
     public void onBLEServerWrite(String data) {
-        onDeviceCommunicationListener.deviceCommunicationSendData(data);
+        onDataTransferListener.dataTransferSendMessage(data);
     }
 
     @Override
     public void onBLEServerError(Error error) {
-        onDeviceCommunicationListener.deviceCommunicationError(error);
+        onDataTransferListener.dataTransferError(error);
     }
 
     //endregion
