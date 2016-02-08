@@ -20,7 +20,7 @@ allprojects {
 
 ```
 dependencies {
-    compile 'gupuru:streetpassble:0.0.5'
+    compile 'gupuru:streetpassble:0.0.6'
 }
 
 ```
