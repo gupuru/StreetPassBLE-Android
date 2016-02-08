@@ -18,19 +18,13 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/chat_recycler_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:scrollbars="vertical" />
+        android:layout_height="match_parent">
 
         <LinearLayout
+            android:id="@+id/send_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@id/chat_recycler_view"
+            android:layout_alignParentBottom="true"
             android:orientation="horizontal"
             android:weightSum="6">
 
@@ -39,16 +33,23 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="5"
-                android:hint="なにか入れて、そうしん押して" />
+                android:hint="@string/send_message_edit_text_hint" />
 
             <Button
                 android:id="@+id/send"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="そうしん" />
+                android:text="@string/send" />
 
         </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/chat_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/send_message"
+            android:scrollbars="vertical" />
 
     </RelativeLayout>
 

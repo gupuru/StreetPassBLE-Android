@@ -1,16 +1,16 @@
 package gupuru.streetpass.activity;
 
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -21,13 +21,14 @@ import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.DataTransfer;
 import gupuru.streetpassble.parcelable.Error;
 
-public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDeviceConnectionListener,
-        DataTransfer.OnDeviceCommunicationListener, View.OnClickListener {
+public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDataTransferListener,
+        DataTransfer.OnConnectedDeviceInitialInfoListener, View.OnClickListener {
 
     private DataTransfer dataTransfer;
-    private String deviceAddress;
     private ChatRecyclerAdapter chatRecyclerAdapter;
+    private RecyclerView recyclerView;
     private EditText messageEditTextView;
+    private Button sendBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,23 +40,22 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDe
         if (toolbar != null) {
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            toolbar.setTitle(getResources().getString(R.string.chat_name));
+            toolbar.setTitleTextColor(ContextCompat.getColor(ChatActivity.this, R.color.white));
         }
 
-        if (!TextUtils.isEmpty(getIntent().getStringExtra("device"))) {
-            deviceAddress = getIntent().getStringExtra("device");
-        }
-
-        Button sendBtn = (Button) findViewById(R.id.send);
+        sendBtn = (Button) findViewById(R.id.send);
         sendBtn.setOnClickListener(this);
+        sendBtn.setEnabled(false);
         messageEditTextView = (EditText) findViewById(R.id.edit);
 
         dataTransfer = new DataTransfer(ChatActivity.this);
-        dataTransfer.setOnDeviceConnectionListener(this);
-        dataTransfer.setOnDeviceCommunicationListener(this);
+        dataTransfer.setOnDataTransferListener(this);
+        dataTransfer.setOnConnectedDeviceInitialInfoListener(this);
         dataTransfer.open();
 
         //RecyclerView初期化
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.chat_recycler_view);
+        recyclerView = (RecyclerView) findViewById(R.id.chat_recycler_view);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(ChatActivity.this);
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -64,7 +64,7 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDe
         recyclerView.addItemDecoration(new DividerItemDecoration(ChatActivity.this, null));
         ArrayList<ChatData> chatDataArrayList = new ArrayList<>();
         //Adapter初期化
-        chatRecyclerAdapter = new ChatRecyclerAdapter(ChatActivity.this, chatDataArrayList);
+        chatRecyclerAdapter = new ChatRecyclerAdapter(chatDataArrayList);
         //アダプターにセット
         recyclerView.setAdapter(chatRecyclerAdapter);
         //更新を通知
@@ -75,7 +75,6 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDe
     protected void onDestroy() {
         super.onDestroy();
         if (dataTransfer != null) {
-            dataTransfer.disconnectDevice();
             dataTransfer.close();
             dataTransfer = null;
         }
@@ -97,8 +96,8 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDe
             case R.id.send:
                 if (dataTransfer != null) {
                     String message = messageEditTextView.getText().toString();
-                    if (message.equals("")){
-                        message = "やまっぷ";
+                    if (message.equals("")) {
+                        message = "からです";
                     }
                     dataTransfer.sendDataToDevice(message);
                 }
@@ -117,40 +116,63 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDe
         chatRecyclerAdapter.notifyDataSetChanged();
     }
 
+    private void showToast(String message) {
+        Toast.makeText(ChatActivity.this, message, Toast.LENGTH_LONG).show();
+    }
+
     /**
-     * メッセージ受け取り
+     * 初回メッセージ受信
+     *
      * @param message
      */
     @Override
-    public void deviceConnectSendReceiveData(String message) {
-        addMessage(message, false);
+    public void connectedDeviceInitialMessage(String message) {
+        sendBtn.setEnabled(true);
+        showToast(getString(R.string.cant_send_data));
     }
 
     /**
-     * エラー
+     * 初回メッセージ受信エラー
+     *
      * @param error
      */
     @Override
-    public void deviceConnectError(Error error) {
-        Log.d("ここ", "deviceConnectError エラー" + error.getErrorMessage());
+    public void connectedDeviceError(Error error) {
+        showToast(error.getErrorMessage());
     }
 
-
-
-
+    /**
+     * 送信メッセージ
+     *
+     * @param message
+     */
     @Override
-    public void deviceCommunicationReceiveData(String data) {
-        Log.d("ここ", "deviceCommunicationReceiveData3" + data);
+    public void dataTransferSendMessage(String message) {
+        addMessage(message, true);
+        recyclerView.smoothScrollToPosition(chatRecyclerAdapter.getDataSize());
+        chatRecyclerAdapter.notifyDataSetChanged();
     }
 
+    /**
+     * 受信メッセージ
+     *
+     * @param message
+     */
     @Override
-    public void deviceCommunicationSendData(String data) {
-        addMessage(data, true);
+    public void dataTransferReceiveMessage(String message) {
+        addMessage(message, false);
+        recyclerView.smoothScrollToPosition(chatRecyclerAdapter.getDataSize());
+        chatRecyclerAdapter.notifyDataSetChanged();
     }
 
+    /**
+     * データ送信エラー
+     *
+     * @param error
+     */
     @Override
-    public void deviceCommunicationError(Error error) {
-        Log.d("ここ", "deviceCommunicationError エラー" + error.getErrorMessage());
+    public void dataTransferError(Error error) {
+        showToast(error.getErrorMessage());
     }
 
 }

@@ -13,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -193,26 +192,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private boolean isC = false;
     @Override
-    public void deviceCommunicationConnected(boolean isConnected) {
-        Log.d("ここ", "OK" + isConnected);
+    public void onConnectedResult(boolean isConnected) {
         connectStatusTextView.setText("ふほほ接続完了した");
         isC = isConnected;
     }
 
     @Override
-    public void onDeviceConnectResult(DeviceData deviceData, boolean isConnect) {
-        Log.d("ここ", "よばれる" + deviceData.getDeviceAddress());
+    public void onConnectedDeviceData(DeviceData deviceData) {
         if (!isC) {
             connectDevice.connectDevice(deviceData.getDeviceAddress());
             Intent intent = new Intent(MainActivity.this, ChatActivity.class);
-            intent.putExtra("device", deviceData.getDeviceAddress());
             intent.setAction(Intent.ACTION_VIEW);
             startActivity(intent);
         }
     }
 
     @Override
-    public void onOpenServer(boolean result) {
+    public void canConnect(boolean result) {
         bleRecyclerAdapter.setIsOpenServer(result);
         if (result){
             connectStatusTextView.setText(getString(R.string.open_server_status_message));
@@ -222,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onDeviceConnectError(Error error) {
+    public void onConnectedError(Error error) {
         statusTextView.setText(error.getErrorMessage());
     }
 

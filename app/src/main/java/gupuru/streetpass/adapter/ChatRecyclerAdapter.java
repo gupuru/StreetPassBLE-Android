@@ -1,6 +1,5 @@
 package gupuru.streetpass.adapter;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,13 +11,11 @@ import java.util.ArrayList;
 import gupuru.streetpass.R;
 import gupuru.streetpass.bean.ChatData;
 
-public class ChatRecyclerAdapter  extends RecyclerView.Adapter<ChatRecyclerAdapter.ViewHolder> {
+public class ChatRecyclerAdapter extends RecyclerView.Adapter<ChatRecyclerAdapter.ViewHolder> {
 
-    private Context context;
     private ArrayList<ChatData> chatDataArrayList;
 
-    public ChatRecyclerAdapter(Context context, ArrayList<ChatData> chatDataArrayList) {
-        this.context = context;
+    public ChatRecyclerAdapter(ArrayList<ChatData> chatDataArrayList) {
         this.chatDataArrayList = chatDataArrayList;
     }
 
@@ -28,6 +25,13 @@ public class ChatRecyclerAdapter  extends RecyclerView.Adapter<ChatRecyclerAdapt
 
     public void clear() {
         chatDataArrayList.clear();
+    }
+
+    public int getDataSize() {
+        if (chatDataArrayList != null && !chatDataArrayList.isEmpty()) {
+            return chatDataArrayList.size();
+        }
+        return 0;
     }
 
     @Override
@@ -71,7 +75,7 @@ public class ChatRecyclerAdapter  extends RecyclerView.Adapter<ChatRecyclerAdapt
     @Override
     public void onBindViewHolder(final ViewHolder viewHolder, int position) {
         if (!chatDataArrayList.isEmpty()) {
-            switch (viewHolder.getItemViewType() ) {
+            switch (viewHolder.getItemViewType()) {
                 case 0:
                     viewHolder.meMessageTextView.setText(chatDataArrayList.get(position).getMessage());
                     break;
