@@ -3,7 +3,7 @@ package gupuru.streetpassble.parcelable;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class ScanDataParcelable implements Parcelable {
+public class DeviceData implements Parcelable {
 
     protected int callbackType;
     protected String deviceAddress;
@@ -27,18 +27,18 @@ public class ScanDataParcelable implements Parcelable {
         out.writeString(serviceData);
     }
 
-    public static final Parcelable.Creator<ScanDataParcelable> CREATOR
-            = new Parcelable.Creator<ScanDataParcelable>() {
-        public ScanDataParcelable createFromParcel(Parcel in) {
-            return new ScanDataParcelable(in);
+    public static final Parcelable.Creator<DeviceData> CREATOR
+            = new Parcelable.Creator<DeviceData>() {
+        public DeviceData createFromParcel(Parcel in) {
+            return new DeviceData(in);
         }
 
-        public ScanDataParcelable[] newArray(int size) {
-            return new ScanDataParcelable[size];
+        public DeviceData[] newArray(int size) {
+            return new DeviceData[size];
         }
     };
 
-    public ScanDataParcelable(int callbackType, String deviceAddress, String deviceName, String uuid, double distance, String serviceData) {
+    public DeviceData(int callbackType, String deviceAddress, String deviceName, String uuid, double distance, String serviceData) {
         this.callbackType = callbackType;
         this.deviceAddress = deviceAddress;
         this.deviceName = deviceName;
@@ -47,7 +47,7 @@ public class ScanDataParcelable implements Parcelable {
         this.serviceData = serviceData;
     }
 
-    private ScanDataParcelable(Parcel in) {
+    private DeviceData(Parcel in) {
         callbackType = in.readInt();
         deviceAddress = in.readString();
         deviceName = in.readString();

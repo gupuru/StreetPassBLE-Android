@@ -1,6 +1,7 @@
 package gupuru.streetpass.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,23 +11,29 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import gupuru.streetpass.R;
+import gupuru.streetpass.activity.ChatActivity;
 import gupuru.streetpass.bean.BleData;
-import gupuru.streetpassble.StreetPassBle;
+import gupuru.streetpassble.ConnectDevice;
 
 public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.ViewHolder> {
 
     private Context context;
     private ArrayList<BleData> bleDataArrayList;
-    private StreetPassBle streetPassBle;
+    private boolean isOpenServer = false;
+    private ConnectDevice connectDevice;
 
-    public BleRecyclerAdapter(Context context, ArrayList<BleData> bleDataArrayList, StreetPassBle streetPassBle) {
+    public BleRecyclerAdapter(Context context, ConnectDevice connectDevice, ArrayList<BleData> bleDataArrayList) {
         this.context = context;
         this.bleDataArrayList = bleDataArrayList;
-        this.streetPassBle = streetPassBle;
+        this.connectDevice = connectDevice;
     }
 
     public void setbleDataArrayList(ArrayList<BleData> bleDataArrayList) {
         this.bleDataArrayList = bleDataArrayList;
+    }
+
+    public void setIsOpenServer(boolean isOpenServer) {
+        this.isOpenServer = isOpenServer;
     }
 
     public void clear() {
@@ -50,10 +57,17 @@ public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, final int i) {
         View v = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.recycler_view_ble, viewGroup, false);
+
         v.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-             /*   streetPassBle.connectDevice(bleDataArrayList.get(i).getDeviceAddress(), "00002a29-0000-1000-8000-00805f9b34fb");*/
+                if (isOpenServer) {
+                    connectDevice.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
+                    Intent intent = new Intent(context, ChatActivity.class);
+                    intent.putExtra("device", bleDataArrayList.get(i).getDeviceAddress());
+                    intent.setAction(Intent.ACTION_VIEW);
+                    context.startActivity(intent);
+                }
             }
         });
 
