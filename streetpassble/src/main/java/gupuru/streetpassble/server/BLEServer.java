@@ -95,9 +95,6 @@ public class BLEServer extends BluetoothGattCallback {
             // 接続が切れたらGATTを空
             if (bluetoothGatt != null) {
                 bluetoothGatt.close();
-                bluetoothGatt = null;
-                serviceUuid = null;
-                characteristicUuid = null;
                 onBLEServerListener.onConnected(false);
             }
         }
