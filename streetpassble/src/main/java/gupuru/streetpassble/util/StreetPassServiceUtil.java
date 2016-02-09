@@ -39,8 +39,8 @@ public class StreetPassServiceUtil {
      * @param str
      * @return
      */
-    public boolean isLimitDataSize(String str) {
-        return str.getBytes().length > 20;
+    public boolean isLimitDataSize(String str, int size) {
+        return str.getBytes().length > size;
     }
 
     /**

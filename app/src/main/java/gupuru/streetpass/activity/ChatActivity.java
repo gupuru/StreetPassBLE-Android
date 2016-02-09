@@ -111,6 +111,7 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
                         message = "からです";
                     }
                     dataTransfer.sendDataToDevice(message);
+                    messageEditTextView.setText("");
                 }
                 break;
             default:

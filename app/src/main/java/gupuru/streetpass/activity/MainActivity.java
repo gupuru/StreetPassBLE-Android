@@ -243,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 streetPassSettings.setServiceUuid(Constants.SERVICE_UUID);
                 streetPassSettings.setCharacteristicUuid(Constants.CHARACTERISTIC_UUID);
                 streetPassSettings.setDefaultResponseData("first");
+                streetPassSettings.setSendDataMaxSize(true);
                 streetPassSettings.setData(getString(R.string.test_message));
                 streetPassBle.start(streetPassSettings, true);
                 break;

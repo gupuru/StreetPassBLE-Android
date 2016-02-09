@@ -18,6 +18,7 @@ public class BLEServer extends BluetoothGattCallback {
     private String serviceUuid;
     private String characteristicUuid;
     private OnBLEServerListener onBLEServerListener;
+    private String message;
 
     public BLEServer(String serviceUuid, String characteristicUuid) {
         this.serviceUuid = serviceUuid;
@@ -42,14 +43,9 @@ public class BLEServer extends BluetoothGattCallback {
         return new Error(Constants.CODE_BLE_SERVER_ERROR, message);
     }
 
-    public void writeData(String message) {
-        BluetoothGattCharacteristic write = getCharacteristicData(serviceUuid, characteristicUuid);
-        if (write != null) {
-            write.setValue(message.getBytes());
-            bluetoothGatt.writeCharacteristic(write);
-        } else {
-            onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
-        }
+    public void writeData(String message, int dataSize) {
+        this.message = message;
+        bluetoothGatt.requestMtu(dataSize);
     }
 
     public void readData() {
@@ -132,6 +128,18 @@ public class BLEServer extends BluetoothGattCallback {
         if (characteristic != null) {
             String data = characteristic.getStringValue(0);
             onBLEServerListener.onBLEServerWrite(data);
+        }
+    }
+
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+        super.onMtuChanged(gatt, mtu, status);
+        BluetoothGattCharacteristic write = getCharacteristicData(serviceUuid, characteristicUuid);
+        if (write != null) {
+            write.setValue(message.getBytes());
+            bluetoothGatt.writeCharacteristic(write);
+        } else {
+            onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
         }
     }
 

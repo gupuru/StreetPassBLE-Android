@@ -37,6 +37,9 @@ import gupuru.streetpassble.util.StreetPassServiceUtil;
 public class StreetPassService extends Service implements BLEGattServer.OnBLEGattServerListener
         , StreetPassServiceReceiver.OnStreetPassServiceReceiverListener, BLEServer.OnBLEServerListener {
 
+    private static final int DATA_MAX_SIZE = 512;
+    private static final int DATA_MIN_SIZE = 20;
+
     private Context context;
     private ScanBle scanBle;
     private AdvertiseBle advertiseBle;
@@ -148,8 +151,8 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         bleGattServer.setBluetoothGattServer(gattServer);
         //初期メッセージ登録
         String defaultData = streetPassSettings.getDefaultResponseData();
-        if (streetPassServiceUtil.isLimitDataSize(defaultData)) {
-            defaultData = streetPassServiceUtil.trimByte(defaultData, 20, "UTF-8");
+        if (streetPassServiceUtil.isLimitDataSize(defaultData, DATA_MIN_SIZE)) {
+            defaultData = streetPassServiceUtil.trimByte(defaultData, DATA_MIN_SIZE, "UTF-8");
         }
         bleGattServer.setDefaultSendResponseData(defaultData);
         //Serviceを登録
@@ -195,7 +198,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     /**
      * BLE scan停止
      */
-    private void stopScan(){
+    private void stopScan() {
         if (scanBle != null && bluetoothLeScanner != null) {
             bluetoothLeScanner.stopScan(scanBle);
             bluetoothLeScanner = null;
@@ -217,8 +220,8 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
             if (serviceData == null) {
                 serviceData = "";
             } else {
-                if (streetPassServiceUtil.isLimitDataSize(serviceData)) {
-                    serviceData = streetPassServiceUtil.trimByte(serviceData, 20, "UTF-8");
+                if (streetPassServiceUtil.isLimitDataSize(serviceData, DATA_MIN_SIZE)) {
+                    serviceData = streetPassServiceUtil.trimByte(serviceData, DATA_MIN_SIZE, "UTF-8");
                 }
             }
 
@@ -253,10 +256,14 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     @Override
     public void onSendData(String data) {
         if (bleServer != null) {
-            if (streetPassServiceUtil.isLimitDataSize(data)) {
-                bleServer.writeData(streetPassServiceUtil.trimByte(data, 20, "UTF-8"));
+            int size = DATA_MIN_SIZE;
+            if (streetPassSettings != null && streetPassSettings.isSendDataMaxSize()) {
+                size = DATA_MAX_SIZE;
+            }
+            if (streetPassServiceUtil.isLimitDataSize(data, size)) {
+                bleServer.writeData(streetPassServiceUtil.trimByte(data, size, "UTF-8"), size);
             } else {
-                bleServer.writeData(data);
+                bleServer.writeData(data, size);
             }
         }
     }
@@ -270,7 +277,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     public void onIsScanStart(boolean flg) {
         if (flg) {
             //scan開始
-            if(scanBle == null && bluetoothLeScanner == null) {
+            if (scanBle == null && bluetoothLeScanner == null) {
                 scan();
             }
         } else {
