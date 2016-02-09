@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.util.Log;
 
 /**
  * BluetoothGattでread, write, 端末接続された場合の処理 BluetoothGattServerCallback
@@ -135,12 +134,6 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                 break;
         }
         onBLEGattServerListener.onConnectionStateChange(isConnect, connectDevice);
-    }
-
-    @Override
-    public void onMtuChanged(BluetoothDevice device, int mtu) {
-        super.onMtuChanged(device, mtu);
-        Log.d("ここ", "よばれる");
     }
 
 }
