@@ -193,8 +193,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean isC = false;
     @Override
     public void onConnectedResult(boolean isConnected) {
-        connectStatusTextView.setText(getString(R.string.connected_device_message));
         isC = isConnected;
+        if (isConnected) {
+            connectStatusTextView.setText(getString(R.string.connected_device_message));
+        } else {
+            Intent intent = new Intent();
+            intent.setAction("disconnect");
+            sendBroadcast(intent);
+        }
     }
 
     @Override
@@ -235,6 +241,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 streetPassSettings.setAdvertiseIncludeDeviceName(true);
                 streetPassSettings.setAdvertiseIncludeTxPowerLevel(true);
                 streetPassSettings.setServiceUuid(Constants.SERVICE_UUID);
+                streetPassSettings.setCharacteristicUuid(Constants.CHARACTERISTIC_UUID);
                 streetPassSettings.setDefaultResponseData("first");
                 streetPassSettings.setData(getString(R.string.test_message));
                 streetPassBle.start(streetPassSettings, true);
