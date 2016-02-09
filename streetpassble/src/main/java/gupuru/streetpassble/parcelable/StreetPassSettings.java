@@ -18,6 +18,7 @@ public class StreetPassSettings implements Parcelable {
     protected boolean advertiseConnectable = Settings.ADVERTISE_CONNECTABLE;
     protected boolean advertiseIncludeDeviceName = Settings.ADVERTISE_INCLUDE_DEVICE_NAME;
     protected boolean advertiseIncludeTxPowerLevel = Settings.ADVERTISE_INCLUDE_TX_POWER_LEVEL;
+    protected boolean sendDataMaxSize = Settings.SEND_DATA_MAX_SIZE;
 
     @Override
     public int describeContents() {
@@ -37,6 +38,7 @@ public class StreetPassSettings implements Parcelable {
         out.writeByte((byte) (advertiseConnectable ? 1 : 0));
         out.writeByte((byte) (advertiseIncludeDeviceName ? 1 : 0));
         out.writeByte((byte) (advertiseIncludeTxPowerLevel ? 1 : 0));
+        out.writeByte((byte) (sendDataMaxSize ? 1 : 0));
     }
 
     public static final Parcelable.Creator<StreetPassSettings> CREATOR
@@ -56,7 +58,7 @@ public class StreetPassSettings implements Parcelable {
     public StreetPassSettings(
             String serviceUuid, String characteristicUuid , String data, String defaultResponseData,
             int scanMode, int advertiseMode, int txPowerLevel, int timeOut, boolean advertiseConnectable,
-            boolean advertiseIncludeDeviceName, boolean advertiseIncludeTxPowerLevel
+            boolean advertiseIncludeDeviceName, boolean advertiseIncludeTxPowerLevel, boolean sendDataMaxSize
     ) {
         this.serviceUuid = serviceUuid;
         this.characteristicUuid = characteristicUuid;
@@ -69,6 +71,7 @@ public class StreetPassSettings implements Parcelable {
         this.advertiseConnectable = advertiseConnectable;
         this.advertiseIncludeDeviceName = advertiseIncludeDeviceName;
         this.advertiseIncludeTxPowerLevel = advertiseIncludeTxPowerLevel;
+        this.sendDataMaxSize = sendDataMaxSize;
     }
 
     private StreetPassSettings(Parcel in) {
@@ -83,6 +86,15 @@ public class StreetPassSettings implements Parcelable {
         advertiseConnectable = in.readByte() != 0;
         advertiseIncludeDeviceName = in.readByte() != 0;
         advertiseIncludeTxPowerLevel = in.readByte() != 0;
+        sendDataMaxSize = in.readByte() != 0;
+    }
+
+    public void setSendDataMaxSize(boolean sendDataMaxSize) {
+        this.sendDataMaxSize = sendDataMaxSize;
+    }
+
+    public boolean isSendDataMaxSize() {
+        return sendDataMaxSize;
     }
 
     public String getDefaultResponseData() {

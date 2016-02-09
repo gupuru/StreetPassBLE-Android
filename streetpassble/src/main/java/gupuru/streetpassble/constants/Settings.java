@@ -14,5 +14,6 @@ public class Settings {
     public static final boolean ADVERTISE_CONNECTABLE = true;
     public static final boolean ADVERTISE_INCLUDE_DEVICE_NAME = true;
     public static final boolean ADVERTISE_INCLUDE_TX_POWER_LEVEL = true;
+    public static final boolean SEND_DATA_MAX_SIZE = false;
 
 }
