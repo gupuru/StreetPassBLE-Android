@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.TransferData;
 import gupuru.streetpassble.reciver.StreetPassGattServerReceiver;
 
 public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGattServerListener {
@@ -22,9 +23,9 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
     }
 
     public interface OnDataTransferListener {
-        void dataTransferSendMessage(String message);
+        void dataTransferSendMessage(TransferData message);
 
-        void dataTransferReceiveMessage(String message);
+        void dataTransferReceiveMessage(TransferData message);
 
         void dataTransferError(Error error);
     }
@@ -113,8 +114,8 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
     //region StreetPassGattServer callback
 
     @Override
-    public void onStreetPassGattServerWrite(String message) {
-        onDataTransferListener.dataTransferReceiveMessage(message);
+    public void onStreetPassGattServerWrite(TransferData data) {
+        onDataTransferListener.dataTransferReceiveMessage(data);
     }
 
     //endregion
@@ -122,12 +123,12 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
     //region BLEServer callback
 
     @Override
-    public void onBLEServerRead(String data) {
+    public void onBLEServerRead(TransferData data) {
         onDataTransferListener.dataTransferReceiveMessage(data);
     }
 
     @Override
-    public void onBLEServerWrite(String data) {
+    public void onBLEServerWrite(TransferData data) {
         onDataTransferListener.dataTransferSendMessage(data);
     }
 

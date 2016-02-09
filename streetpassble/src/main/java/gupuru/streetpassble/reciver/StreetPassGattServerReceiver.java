@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.TransferData;
 
 /**
  * GATTサーバーのレシーバー BroadcastReceiver
@@ -18,11 +19,11 @@ public class StreetPassGattServerReceiver extends BroadcastReceiver {
     }
 
     public interface OnStreetPassGattServerListener {
-        void onStreetPassGattServerWrite(String message);
+        void onStreetPassGattServerWrite(TransferData data);
 
-        void onBLEServerRead(String data);
+        void onBLEServerRead(TransferData data);
 
-        void onBLEServerWrite(String data);
+        void onBLEServerWrite(TransferData data);
 
         void onBLEServerError(Error error);
     }
@@ -35,19 +36,20 @@ public class StreetPassGattServerReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (Constants.ACTION_GATT_SERVER_WRITE_REQUEST.equals(action)) {
-            String message
-                    = intent.getStringExtra(Constants.WRITE_REQUEST);
-            if (message != null) {
-                onStreetPassGattServerListener.onStreetPassGattServerWrite(message);
+            TransferData transferData =  intent.getParcelableExtra(Constants.WRITE_REQUEST);
+            if (transferData != null) {
+                onStreetPassGattServerListener.onStreetPassGattServerWrite(transferData);
             }
         } else if (Constants.ACTION_BLE_SERVER_READ.equals(action)) {
-            onStreetPassGattServerListener.onBLEServerRead(
-                    intent.getStringExtra(Constants.BLE_SERVER_READ)
-            );
+            TransferData transferData =  intent.getParcelableExtra(Constants.BLE_SERVER_READ);
+            if (transferData != null) {
+                onStreetPassGattServerListener.onBLEServerRead(transferData);
+            }
         } else if (Constants.ACTION_BLE_SERVER_WRITE.equals(action)) {
-            onStreetPassGattServerListener.onBLEServerWrite(
-                    intent.getStringExtra(Constants.BLE_SERVER_WRITE)
-            );
+            TransferData transferData =  intent.getParcelableExtra(Constants.BLE_SERVER_WRITE);
+            if (transferData != null) {
+                onStreetPassGattServerListener.onBLEServerWrite(transferData);
+            }
         } else if (Constants.ACTION_BLE_SERVER_ERROR.equals(action)) {
             onStreetPassGattServerListener.onBLEServerError(
                     (Error) intent.getExtras().get(Constants.BLE_SERVER_ERROR)

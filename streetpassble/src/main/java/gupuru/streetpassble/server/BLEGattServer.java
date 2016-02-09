@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 
+import gupuru.streetpassble.parcelable.TransferData;
+
 /**
  * BluetoothGattでread, write, 端末接続された場合の処理 BluetoothGattServerCallback
  */
@@ -24,7 +26,7 @@ public class BLEGattServer extends BluetoothGattServerCallback {
     public interface OnBLEGattServerListener {
         void onServiceAdded(boolean result);
 
-        void onCharacteristicWriteRequest(String message);
+        void onCharacteristicWriteRequest(TransferData data);
 
         void onConnectionStateChange(boolean isConnect, BluetoothDevice device);
     }
@@ -104,7 +106,8 @@ public class BLEGattServer extends BluetoothGattServerCallback {
         if (bluetoothGattServer != null && value != null) {
             characteristic.setValue(value);
             String message = characteristic.getStringValue(offset);
-            onBLEGattServerListener.onCharacteristicWriteRequest(message);
+            TransferData transferData = new TransferData(device.getAddress(), message);
+            onBLEGattServerListener.onCharacteristicWriteRequest(transferData);
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
         }
     }
