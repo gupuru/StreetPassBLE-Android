@@ -44,8 +44,13 @@ public class BLEServer extends BluetoothGattCallback {
     }
 
     public void writeData(String message, int dataSize) {
-        this.message = message;
-        bluetoothGatt.requestMtu(dataSize);
+        if (bluetoothGatt != null) {
+            if (message == null) {
+                message = "";
+            }
+            this.message = message;
+            bluetoothGatt.requestMtu(dataSize);
+        }
     }
 
     public void readData() {
@@ -135,7 +140,7 @@ public class BLEServer extends BluetoothGattCallback {
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
         BluetoothGattCharacteristic write = getCharacteristicData(serviceUuid, characteristicUuid);
-        if (write != null) {
+        if (bluetoothGatt != null && write != null) {
             write.setValue(message.getBytes());
             bluetoothGatt.writeCharacteristic(write);
         } else {
