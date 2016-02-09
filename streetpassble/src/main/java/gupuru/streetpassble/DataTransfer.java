@@ -15,17 +15,10 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
     private StreetPassGattServerReceiver streetPassGattServerReceiver;
     private IntentFilter streetPassGattServerIntentFilter;
 
-    private OnConnectedDeviceInitialInfoListener onConnectedDeviceInitialInfoListener;
     private OnDataTransferListener onDataTransferListener;
 
     public DataTransfer(Context context) {
         this.context = context;
-    }
-
-    public interface OnConnectedDeviceInitialInfoListener {
-        void connectedDeviceInitialMessage(String message);
-
-        void connectedDeviceError(Error error);
     }
 
     public interface OnDataTransferListener {
@@ -34,10 +27,6 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
         void dataTransferReceiveMessage(String message);
 
         void dataTransferError(Error error);
-    }
-
-    public void setOnConnectedDeviceInitialInfoListener(OnConnectedDeviceInitialInfoListener onConnectedDeviceInitialInfoListener) {
-        this.onConnectedDeviceInitialInfoListener = onConnectedDeviceInitialInfoListener;
     }
 
     public void setOnDataTransferListener(OnDataTransferListener onDataTransferListener) {
@@ -117,7 +106,7 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
             streetPassGattServerReceiver = null;
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onConnectedDeviceInitialInfoListener.connectedDeviceError(error);
+            onDataTransferListener.dataTransferError(error);
         }
     }
 
@@ -134,7 +123,7 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
 
     @Override
     public void onBLEServerRead(String data) {
-        onConnectedDeviceInitialInfoListener.connectedDeviceInitialMessage(data);
+        onDataTransferListener.dataTransferReceiveMessage(data);
     }
 
     @Override

@@ -1,7 +1,12 @@
 package gupuru.streetpass.activity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,7 +27,7 @@ import gupuru.streetpassble.DataTransfer;
 import gupuru.streetpassble.parcelable.Error;
 
 public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDataTransferListener,
-        DataTransfer.OnConnectedDeviceInitialInfoListener, View.OnClickListener {
+        View.OnClickListener {
 
     private DataTransfer dataTransfer;
     private ChatRecyclerAdapter chatRecyclerAdapter;
@@ -51,7 +56,6 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
 
         dataTransfer = new DataTransfer(ChatActivity.this);
         dataTransfer.setOnDataTransferListener(this);
-        dataTransfer.setOnConnectedDeviceInitialInfoListener(this);
         dataTransfer.open();
 
         //RecyclerView初期化
@@ -72,18 +76,25 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
     }
 
     @Override
-    protected void onDestroy() {
+    public void onResume() {
+        super.onResume();
+        LocalBroadcastManager.getInstance(this).registerReceiver(disconnect,
+                new IntentFilter("disconnect"));
+    }
+
+    @Override
+    public void onDestroy() {
         super.onDestroy();
-        if (dataTransfer != null) {
-            dataTransfer.close();
-            dataTransfer = null;
-        }
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(disconnect);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
+                if (dataTransfer != null) {
+                    dataTransfer.close();
+                }
                 finish();
                 return true;
         }
@@ -122,37 +133,15 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
     }
 
     /**
-     * 初回メッセージ受信
-     *
-     * @param message
-     */
-    @Override
-    public void connectedDeviceInitialMessage(String message) {
-        if (message != null) {
-            addMessage(message, false);
-        }
-        sendBtn.setEnabled(true);
-        showToast(getString(R.string.cant_send_data));
-    }
-
-    /**
-     * 初回メッセージ受信エラー
-     *
-     * @param error
-     */
-    @Override
-    public void connectedDeviceError(Error error) {
-        showToast(error.getErrorMessage());
-    }
-
-    /**
      * 送信メッセージ
      *
      * @param message
      */
     @Override
     public void dataTransferSendMessage(String message) {
-        addMessage(message, true);
+        if (message != null) {
+            addMessage(message, true);
+        }
     }
 
     /**
@@ -162,7 +151,10 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
      */
     @Override
     public void dataTransferReceiveMessage(String message) {
-        addMessage(message, false);
+        sendBtn.setEnabled(true);
+        if (message != null) {
+            addMessage(message, false);
+        }
     }
 
     /**
@@ -175,4 +167,13 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
         showToast(error.getErrorMessage());
     }
 
+    private BroadcastReceiver disconnect = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (dataTransfer != null) {
+                dataTransfer.disconnectDevice();
+            }
+            finish();
+        }
+    };
 }
