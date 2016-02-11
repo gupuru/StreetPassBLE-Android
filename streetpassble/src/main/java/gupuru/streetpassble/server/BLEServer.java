@@ -59,7 +59,9 @@ public class BLEServer extends BluetoothGattCallback {
         if (read != null) {
             bluetoothGatt.readCharacteristic(read);
         } else {
-            onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
+            }
         }
     }
 
@@ -72,16 +74,22 @@ public class BLEServer extends BluetoothGattCallback {
         try {
             bluetoothGattService = bluetoothGatt.getService(UUID.fromString(sid));
         } catch (NullPointerException e) {
-            onBLEServerListener.onBLEServerError(getErrorParcelable("uuidがnullです。"));
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onBLEServerError(getErrorParcelable("uuidがnullです。"));
+            }
             return null;
         }
         if (bluetoothGattService == null) {
-            onBLEServerListener.onBLEServerError(getErrorParcelable("Service uuidがnullです。"));
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onBLEServerError(getErrorParcelable("Service uuidがnullです。"));
+            }
             return null;
         }
         BluetoothGattCharacteristic c = bluetoothGattService.getCharacteristic(UUID.fromString(cid));
         if (c == null) {
-            onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
+            }
             return null;
         }
         return c;
@@ -92,12 +100,16 @@ public class BLEServer extends BluetoothGattCallback {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             bluetoothGatt = gatt;
             bluetoothGatt.discoverServices();
-            onBLEServerListener.onConnected(true);
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onConnected(true);
+            }
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             // 接続が切れたらGATTを空
             if (bluetoothGatt != null) {
                 bluetoothGatt.close();
-                onBLEServerListener.onConnected(false);
+                if (onBLEServerListener != null) {
+                    onBLEServerListener.onConnected(false);
+                }
             }
         }
     }
@@ -135,7 +147,9 @@ public class BLEServer extends BluetoothGattCallback {
         if (characteristic != null && gatt != null) {
             String data = characteristic.getStringValue(0);
             TransferData transferData = new TransferData(gatt.getDevice().getAddress(), data);
-            onBLEServerListener.onBLEServerWrite(transferData);
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onBLEServerWrite(transferData);
+            }
         }
     }
 
@@ -147,7 +161,9 @@ public class BLEServer extends BluetoothGattCallback {
             write.setValue(message.getBytes());
             bluetoothGatt.writeCharacteristic(write);
         } else {
-            onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
+            if (onBLEServerListener != null) {
+                onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
+            }
         }
     }
 

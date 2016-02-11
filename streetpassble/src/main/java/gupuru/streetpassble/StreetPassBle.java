@@ -224,7 +224,9 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
             context.unregisterReceiver(streetPassReceiver);
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onStreetPassListener.onError(error);
+            if (onStreetPassListener != null) {
+                onStreetPassListener.onError(error);
+            }
         }
     }
 
@@ -234,17 +236,23 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     @Override
     public void onStreetPassScanResult(DeviceData deviceData) {
-        onStreetPassListener.onDataReceived(deviceData);
+        if (onStreetPassListener != null) {
+            onStreetPassListener.onDataReceived(deviceData);
+        }
     }
 
     @Override
     public void onStreetPassAdvertiseResult(AdvertiseSuccess advertiseSuccess) {
-        onStreetPassListener.onAdvertiseResult(advertiseSuccess);
+        if (onStreetPassListener != null) {
+            onStreetPassListener.onAdvertiseResult(advertiseSuccess);
+        }
     }
 
     @Override
     public void onStreetPassError(Error error) {
-        onStreetPassListener.onError(error);
+        if (onStreetPassListener != null) {
+            onStreetPassListener.onError(error);
+        }
     }
 
     //endregion
