@@ -7,7 +7,7 @@ uploadArchives {
     repositories {
         mavenDeployer {
             repository url: "file://${repo.absolutePath}"
-            pom.version = '0.0.11'
+            pom.version = '0.0.12'
             pom.groupId = 'gupuru'
             pom.artifactId = 'streetpassble'
         }
@@ -22,7 +22,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
-        versionName "0.0.11"
+        versionName "0.0.12"
     }
     buildTypes {
         release {
