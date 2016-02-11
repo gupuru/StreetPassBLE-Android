@@ -7,6 +7,7 @@ public class TransferData implements Parcelable {
 
     protected String message;
     protected String deviceAddress;
+
     @Override
     public int describeContents() {
         return 0;
