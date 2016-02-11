@@ -25,6 +25,7 @@ import gupuru.streetpass.bean.ChatData;
 import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.DataTransfer;
 import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.TransferData;
 
 public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDataTransferListener,
         View.OnClickListener {
@@ -139,9 +140,9 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
      * @param message
      */
     @Override
-    public void dataTransferSendMessage(String message) {
+    public void dataTransferSendMessage(TransferData message) {
         if (message != null) {
-            addMessage(message, true);
+            addMessage(message.getMessage(), true);
         }
     }
 
@@ -151,10 +152,10 @@ public class ChatActivity extends AppCompatActivity implements DataTransfer.OnDa
      * @param message
      */
     @Override
-    public void dataTransferReceiveMessage(String message) {
+    public void dataTransferReceiveMessage(TransferData message) {
         sendBtn.setEnabled(true);
         if (message != null) {
-            addMessage(message, false);
+            addMessage(message.getMessage(), false);
         }
     }
 

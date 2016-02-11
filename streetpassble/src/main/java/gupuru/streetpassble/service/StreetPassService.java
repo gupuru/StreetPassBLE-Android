@@ -29,6 +29,7 @@ import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.parcelable.TransferData;
 import gupuru.streetpassble.reciver.StreetPassServiceReceiver;
 import gupuru.streetpassble.server.BLEGattServer;
 import gupuru.streetpassble.server.BLEServer;
@@ -307,7 +308,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     }
 
     @Override
-    public void onCharacteristicWriteRequest(String message) {
+    public void onCharacteristicWriteRequest(TransferData message) {
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_GATT_SERVER_WRITE_REQUEST);
         intent.putExtra(Constants.WRITE_REQUEST, message);
@@ -328,7 +329,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     //region BLEServer callback
 
     @Override
-    public void onBLEServerRead(String data) {
+    public void onBLEServerRead(TransferData data) {
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_BLE_SERVER_READ);
         intent.putExtra(Constants.BLE_SERVER_READ, data);
@@ -336,7 +337,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     }
 
     @Override
-    public void onBLEServerWrite(String data) {
+    public void onBLEServerWrite(TransferData data) {
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_BLE_SERVER_WRITE);
         intent.putExtra(Constants.BLE_SERVER_WRITE, data);

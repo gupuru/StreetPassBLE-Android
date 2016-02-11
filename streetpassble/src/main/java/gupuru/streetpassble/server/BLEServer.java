@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import gupuru.streetpassble.constants.Constants;
 import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.TransferData;
 
 public class BLEServer extends BluetoothGattCallback {
 
@@ -26,9 +27,9 @@ public class BLEServer extends BluetoothGattCallback {
     }
 
     public interface OnBLEServerListener {
-        void onBLEServerRead(String data);
+        void onBLEServerRead(TransferData data);
 
-        void onBLEServerWrite(String data);
+        void onBLEServerWrite(TransferData data);
 
         void onConnected(boolean result);
 
@@ -121,18 +122,20 @@ public class BLEServer extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt,
                                      BluetoothGattCharacteristic characteristic, int status) {
-        if (characteristic != null) {
+        if (characteristic != null && gatt != null) {
             String data = characteristic.getStringValue(0);
-            onBLEServerListener.onBLEServerRead(data);
+            TransferData transferData = new TransferData(gatt.getDevice().getAddress(), data);
+            onBLEServerListener.onBLEServerRead(transferData);
         }
     }
 
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt,
                                       BluetoothGattCharacteristic characteristic, int status) {
-        if (characteristic != null) {
+        if (characteristic != null && gatt != null) {
             String data = characteristic.getStringValue(0);
-            onBLEServerListener.onBLEServerWrite(data);
+            TransferData transferData = new TransferData(gatt.getDevice().getAddress(), data);
+            onBLEServerListener.onBLEServerWrite(transferData);
         }
     }
 
