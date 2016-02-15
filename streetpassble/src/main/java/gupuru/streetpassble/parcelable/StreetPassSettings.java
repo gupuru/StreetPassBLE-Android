@@ -7,18 +7,50 @@ import gupuru.streetpassble.constants.Settings;
 
 public class StreetPassSettings implements Parcelable {
 
-    protected String serviceUuid = Settings.SERVICE_UUID;
-    protected String characteristicUuid = Settings.CHARACTERISTIC_UUID;
-    protected String data = "";
-    protected String defaultResponseData = "";
-    protected int scanMode = Settings.SCAN__MODE;
-    protected int advertiseMode = Settings.ADVERTISE_MODE;
-    protected int txPowerLevel = Settings.TX_POWER_LEVEL;
-    protected int timeOut = Settings.TIME_OUT;
-    protected boolean advertiseConnectable = Settings.ADVERTISE_CONNECTABLE;
-    protected boolean advertiseIncludeDeviceName = Settings.ADVERTISE_INCLUDE_DEVICE_NAME;
-    protected boolean advertiseIncludeTxPowerLevel = Settings.ADVERTISE_INCLUDE_TX_POWER_LEVEL;
-    protected boolean sendDataMaxSize = Settings.SEND_DATA_MAX_SIZE;
+    protected String serviceUuid;
+    protected String characteristicUuid;
+    protected String data;
+    protected String defaultResponseData;
+    protected int scanMode;
+    protected int advertiseMode;
+    protected int txPowerLevel;
+    protected int timeOut;
+    protected boolean advertiseConnectable;
+    protected boolean advertiseIncludeDeviceName;
+    protected boolean advertiseIncludeTxPowerLevel;
+    protected boolean sendDataMaxSize;
+
+    public static class Builder {
+        protected String serviceUuid = Settings.SERVICE_UUID;
+        protected String characteristicUuid = Settings.CHARACTERISTIC_UUID;
+        protected String data = "";
+        protected String defaultResponseData = "";
+        protected int scanMode = Settings.SCAN__MODE;
+        protected int advertiseMode = Settings.ADVERTISE_MODE;
+        protected int txPowerLevel = Settings.TX_POWER_LEVEL;
+        protected int timeOut = Settings.TIME_OUT;
+        protected boolean advertiseConnectable = Settings.ADVERTISE_CONNECTABLE;
+        protected boolean advertiseIncludeDeviceName = Settings.ADVERTISE_INCLUDE_DEVICE_NAME;
+        protected boolean advertiseIncludeTxPowerLevel = Settings.ADVERTISE_INCLUDE_TX_POWER_LEVEL;
+        protected boolean sendDataMaxSize = Settings.SEND_DATA_MAX_SIZE;
+
+        public Builder serviceUuid(String serviceUuid) { this.serviceUuid = serviceUuid; return this; }
+        public Builder characteristicUuid(String characteristicUuid) { this.characteristicUuid = characteristicUuid; return this; }
+        public Builder data(String data) { this.data = data; return this; }
+        public Builder defaultResponseData(String defaultResponseData) { this.defaultResponseData = defaultResponseData; return this; }
+        public Builder scanMode(int scanMode) { this.scanMode = scanMode; return this; }
+        public Builder advertiseMode(int advertiseMode) { this.advertiseMode = advertiseMode; return this; }
+        public Builder txPowerLevel(int txPowerLevel) { this.txPowerLevel = txPowerLevel; return this; }
+        public Builder timeOut(int timeOut) { this.timeOut = timeOut; return this; }
+        public Builder advertiseConnectable(boolean advertiseConnectable) { this.advertiseConnectable = advertiseConnectable; return this; }
+        public Builder advertiseIncludeDeviceName(boolean advertiseIncludeDeviceName) { this.advertiseIncludeDeviceName = advertiseIncludeDeviceName; return this; }
+        public Builder advertiseIncludeTxPowerLevel(boolean advertiseIncludeTxPowerLevel) { this.advertiseIncludeTxPowerLevel = advertiseIncludeTxPowerLevel; return this; }
+        public Builder sendDataMaxSize(boolean sendDataMaxSize) { this.sendDataMaxSize = sendDataMaxSize; return this; }
+
+        public StreetPassSettings build() {
+            return new StreetPassSettings(this);
+        }
+    }
 
     @Override
     public int describeContents() {
@@ -52,26 +84,19 @@ public class StreetPassSettings implements Parcelable {
         }
     };
 
-    public StreetPassSettings() {
-    }
-
-    public StreetPassSettings(
-            String serviceUuid, String characteristicUuid , String data, String defaultResponseData,
-            int scanMode, int advertiseMode, int txPowerLevel, int timeOut, boolean advertiseConnectable,
-            boolean advertiseIncludeDeviceName, boolean advertiseIncludeTxPowerLevel, boolean sendDataMaxSize
-    ) {
-        this.serviceUuid = serviceUuid;
-        this.characteristicUuid = characteristicUuid;
-        this.data = data;
-        this.defaultResponseData = defaultResponseData;
-        this.scanMode = scanMode;
-        this.advertiseMode = advertiseMode;
-        this.txPowerLevel = txPowerLevel;
-        this.timeOut = timeOut;
-        this.advertiseConnectable = advertiseConnectable;
-        this.advertiseIncludeDeviceName = advertiseIncludeDeviceName;
-        this.advertiseIncludeTxPowerLevel = advertiseIncludeTxPowerLevel;
-        this.sendDataMaxSize = sendDataMaxSize;
+    private StreetPassSettings(Builder builder) {
+        this.serviceUuid = builder.serviceUuid;
+        this.characteristicUuid = builder.characteristicUuid;
+        this.data = builder.data;
+        this.defaultResponseData = builder.defaultResponseData;
+        this.scanMode = builder.scanMode;
+        this.advertiseMode = builder.advertiseMode;
+        this.txPowerLevel = builder.txPowerLevel;
+        this.timeOut = builder.timeOut;
+        this.advertiseConnectable = builder.advertiseConnectable;
+        this.advertiseIncludeDeviceName = builder.advertiseIncludeDeviceName;
+        this.advertiseIncludeTxPowerLevel = builder.advertiseIncludeTxPowerLevel;
+        this.sendDataMaxSize = builder.sendDataMaxSize;
     }
 
     private StreetPassSettings(Parcel in) {
@@ -89,10 +114,6 @@ public class StreetPassSettings implements Parcelable {
         sendDataMaxSize = in.readByte() != 0;
     }
 
-    public void setSendDataMaxSize(boolean sendDataMaxSize) {
-        this.sendDataMaxSize = sendDataMaxSize;
-    }
-
     public boolean isSendDataMaxSize() {
         return sendDataMaxSize;
     }
@@ -101,32 +122,16 @@ public class StreetPassSettings implements Parcelable {
         return defaultResponseData;
     }
 
-    public void setDefaultResponseData(String defaultResponseData) {
-        this.defaultResponseData = defaultResponseData;
-    }
-
     public String getData() {
         return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
     }
 
     public String getServiceUuid() {
         return serviceUuid;
     }
 
-    public void setServiceUuid(String serviceUuid) {
-        this.serviceUuid = serviceUuid;
-    }
-
     public String getCharacteristicUuid() {
         return characteristicUuid;
-    }
-
-    public void setCharacteristicUuid(String characteristicUuid) {
-        this.characteristicUuid = characteristicUuid;
     }
 
     public int getAdvertiseMode() {
@@ -155,34 +160,6 @@ public class StreetPassSettings implements Parcelable {
 
     public boolean isAdvertiseIncludeTxPowerLevel() {
         return advertiseIncludeTxPowerLevel;
-    }
-
-    public void setTimeOut(int timeOut) {
-        this.timeOut = timeOut;
-    }
-
-    public void setAdvertiseConnectable(boolean advertiseConnectable) {
-        this.advertiseConnectable = advertiseConnectable;
-    }
-
-    public void setAdvertiseIncludeDeviceName(boolean advertiseIncludeDeviceName) {
-        this.advertiseIncludeDeviceName = advertiseIncludeDeviceName;
-    }
-
-    public void setAdvertiseIncludeTxPowerLevel(boolean advertiseIncludeTxPowerLevel) {
-        this.advertiseIncludeTxPowerLevel = advertiseIncludeTxPowerLevel;
-    }
-
-    public void setAdvertiseMode(int advertiseMode) {
-        this.advertiseMode = advertiseMode;
-    }
-
-    public void setScanMode(int scanMode) {
-        this.scanMode = scanMode;
-    }
-
-    public void setTxPowerLevel(int txPowerLevel) {
-        this.txPowerLevel = txPowerLevel;
     }
 
 }

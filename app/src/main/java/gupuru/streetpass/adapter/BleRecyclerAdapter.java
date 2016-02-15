@@ -13,19 +13,19 @@ import java.util.ArrayList;
 import gupuru.streetpass.R;
 import gupuru.streetpass.activity.ChatActivity;
 import gupuru.streetpass.bean.BleData;
-import gupuru.streetpassble.ConnectDevice;
+import gupuru.streetpassble.StreetPassBle;
 
 public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.ViewHolder> {
 
     private Context context;
     private ArrayList<BleData> bleDataArrayList;
     private boolean isOpenServer = false;
-    private ConnectDevice connectDevice;
+    private StreetPassBle streetPassBle;
 
-    public BleRecyclerAdapter(Context context, ConnectDevice connectDevice, ArrayList<BleData> bleDataArrayList) {
+    public BleRecyclerAdapter(Context context, StreetPassBle streetPassBle, ArrayList<BleData> bleDataArrayList) {
         this.context = context;
         this.bleDataArrayList = bleDataArrayList;
-        this.connectDevice = connectDevice;
+        this.streetPassBle = streetPassBle;
     }
 
     public void setbleDataArrayList(ArrayList<BleData> bleDataArrayList) {
@@ -62,7 +62,7 @@ public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.
             @Override
             public void onClick(View v) {
                 if (isOpenServer) {
-                    connectDevice.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
+                    streetPassBle.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
                     Intent intent = new Intent(context, ChatActivity.class);
                     intent.putExtra("device", bleDataArrayList.get(i).getDeviceAddress());
                     intent.setAction(Intent.ACTION_VIEW);

@@ -15,30 +15,46 @@ import gupuru.streetpassble.parcelable.AdvertiseSuccess;
 import gupuru.streetpassble.parcelable.DeviceData;
 import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.reciver.ConnectDeviceReceiver;
 import gupuru.streetpassble.reciver.StreetPassReceiver;
 import gupuru.streetpassble.service.StreetPassService;
 
-public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverListener {
+public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverListener,
+        ConnectDeviceReceiver.OnConnectDeviceReceiverListener {
 
     private Context context;
     private OnStreetPassListener onStreetPassListener;
     private IntentFilter streetPassIntentFilter;
     private StreetPassReceiver streetPassReceiver;
+    private ConnectDeviceReceiver connectDeviceReceiver;
+    private OnConnectDeviceListener onConnectDeviceListener;
 
     public StreetPassBle(Context context) {
         this.context = context;
     }
 
     public interface OnStreetPassListener {
-        void onDataReceived(DeviceData deviceData);
+        void onReceivedData(DeviceData deviceData);
 
         void onAdvertiseResult(AdvertiseSuccess advertiseSuccess);
 
-        void onError(Error error);
+        void onStreetPassError(Error error);
+    }
+
+    public interface OnConnectDeviceListener {
+        void onConnectedDeviceData(DeviceData deviceData);
+
+        void onConnectedResult(boolean isConnected);
+
+        void canConnect(boolean result);
     }
 
     public void setOnStreetPassListener(OnStreetPassListener onStreetPassListener) {
         this.onStreetPassListener = onStreetPassListener;
+    }
+
+    public void setOnConnectDeviceListener(OnConnectDeviceListener onConnectDeviceListener) {
+        this.onConnectDeviceListener = onConnectDeviceListener;
     }
 
     //region support
@@ -91,8 +107,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
         if (!serviceIsRunning()) {
             initStreetPassReceiver();
             context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
-            StreetPassSettings streetPassSettings = new StreetPassSettings();
-            streetPassSettings.setServiceUuid(uuid);
+            StreetPassSettings streetPassSettings = new StreetPassSettings.Builder().serviceUuid(uuid).build();
             startService(Constants.STREET_PASS_SETTINGS, streetPassSettings);
         }
     }
@@ -115,6 +130,9 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
      * @param canConnect
      */
     public void start(StreetPassSettings streetPassSettings, boolean canConnect) {
+        if (canConnect) {
+            connectDeviceRegister();
+        }
         if (!serviceIsRunning()) {
             initStreetPassReceiver();
             context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
@@ -153,6 +171,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
      */
     public void stop() {
         unregisterStreetPassReceiver();
+        connectDeviceUnregister();
         if (serviceIsRunning()) {
             Intent intent = new Intent(context,
                     StreetPassService.class);
@@ -225,7 +244,37 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
             if (onStreetPassListener != null) {
-                onStreetPassListener.onError(error);
+                onStreetPassListener.onStreetPassError(error);
+            }
+        }
+    }
+
+    /**
+     * connectDevice Receiver登録
+     */
+    private void connectDeviceRegister() {
+        connectDeviceReceiver = new ConnectDeviceReceiver();
+        connectDeviceReceiver.setOnConnectDeviceReceiverListener(this);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Constants.ACTION_GATT_SERVICE_ADDED);
+        intentFilter.addAction(Constants.ACTION_GATT_SERVER_STATE_CHANGE);
+        intentFilter.addAction(Constants.ACTION_BLE_SERVER_CONNECTED);
+        context.registerReceiver(connectDeviceReceiver, intentFilter);
+    }
+
+    /**
+     * connectDevice Receiver解除
+     */
+    private void connectDeviceUnregister() {
+        if (connectDeviceReceiver != null) {
+            try {
+                context.unregisterReceiver(connectDeviceReceiver);
+                connectDeviceReceiver = null;
+            } catch (IllegalArgumentException e) {
+                Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
+                if (onStreetPassListener != null) {
+                    onStreetPassListener.onStreetPassError(error);
+                }
             }
         }
     }
@@ -237,7 +286,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     @Override
     public void onStreetPassScanResult(DeviceData deviceData) {
         if (onStreetPassListener != null) {
-            onStreetPassListener.onDataReceived(deviceData);
+            onStreetPassListener.onReceivedData(deviceData);
         }
     }
 
@@ -251,7 +300,32 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     @Override
     public void onStreetPassError(Error error) {
         if (onStreetPassListener != null) {
-            onStreetPassListener.onError(error);
+            onStreetPassListener.onStreetPassError(error);
+        }
+    }
+
+    //endregion
+
+    //region OnConnectDeviceReceiverListener
+
+    @Override
+    public void onStreetPassServiceAdded(boolean result) {
+        if (onConnectDeviceListener != null) {
+            onConnectDeviceListener.canConnect(result);
+        }
+    }
+
+    @Override
+    public void onStreetPassGattServerStateChange(DeviceData deviceData, boolean isConnect) {
+        if (onConnectDeviceListener != null) {
+            onConnectDeviceListener.onConnectedDeviceData(deviceData);
+        }
+    }
+
+    @Override
+    public void onBLEConnected(boolean result) {
+        if (onConnectDeviceListener != null) {
+            onConnectDeviceListener.onConnectedResult(result);
         }
     }
 
@@ -277,11 +351,23 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     //region Sub Methods
 
     /**
+     * 端末に接続する
+     *
+     * @param address
+     */
+    public void connectDevice(String address) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_CONNECT_DEVICE);
+        intent.putExtra(Constants.DEVICE_ADDRESS, address);
+        context.sendBroadcast(intent);
+    }
+
+    /**
      * ライブラリのバージョン取得
      * @return
      */
     public String getLibraryVersion() {
-        return "0.0.6";
+        return BuildConfig.VERSION_NAME;
     }
 
     //endregion
