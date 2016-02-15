@@ -107,8 +107,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
         if (!serviceIsRunning()) {
             initStreetPassReceiver();
             context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
-            StreetPassSettings streetPassSettings = new StreetPassSettings();
-            streetPassSettings.setServiceUuid(uuid);
+            StreetPassSettings streetPassSettings = new StreetPassSettings.Builder().serviceUuid(uuid).build();
             startService(Constants.STREET_PASS_SETTINGS, streetPassSettings);
         }
     }

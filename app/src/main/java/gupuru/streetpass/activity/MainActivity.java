@@ -94,7 +94,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startBtn.setVisibility(View.GONE);
             startBtn.setVisibility(View.GONE);
         }
-
         //RecyclerView初期化
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
@@ -110,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         recyclerView.setAdapter(bleRecyclerAdapter);
         //更新を通知
         bleRecyclerAdapter.notifyDataSetChanged();
-
     }
 
     @Override
@@ -226,18 +224,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.start:
                 statusTextView.setText(getString(R.string.starting_status_message));
-                StreetPassSettings streetPassSettings = new StreetPassSettings();
-                streetPassSettings.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
-                streetPassSettings.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
-                streetPassSettings.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
-                streetPassSettings.setAdvertiseConnectable(true);
-                streetPassSettings.setAdvertiseIncludeDeviceName(true);
-                streetPassSettings.setAdvertiseIncludeTxPowerLevel(true);
-                streetPassSettings.setServiceUuid(Constants.SERVICE_UUID);
-                streetPassSettings.setCharacteristicUuid(Constants.CHARACTERISTIC_UUID);
-                streetPassSettings.setDefaultResponseData("first");
-                streetPassSettings.setSendDataMaxSize(true);
-                streetPassSettings.setData(getString(R.string.test_message));
+
+                StreetPassSettings streetPassSettings
+                        = new StreetPassSettings.Builder()
+                        .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                        .scanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                        .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                        .advertiseConnectable(true)
+                        .advertiseIncludeDeviceName(true)
+                        .advertiseIncludeTxPowerLevel(true)
+                        .serviceUuid(Constants.SERVICE_UUID)
+                        .characteristicUuid(Constants.CHARACTERISTIC_UUID)
+                        .defaultResponseData("first")
+                        .sendDataMaxSize(true)
+                        .data(getString(R.string.test_message))
+                        .build();
+
                 streetPassBle.start(streetPassSettings, true);
                 break;
             case R.id.stop:
