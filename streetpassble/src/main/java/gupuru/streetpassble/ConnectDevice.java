@@ -79,23 +79,31 @@ public class ConnectDevice implements ConnectDeviceReceiver.OnConnectDeviceRecei
             connectDeviceReceiver = null;
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onConnectDeviceListener.onConnectedError(error);
+            if (onConnectDeviceListener != null) {
+                onConnectDeviceListener.onConnectedError(error);
+            }
         }
     }
 
     @Override
     public void onStreetPassServiceAdded(boolean result) {
-        onConnectDeviceListener.canConnect(result);
+        if (onConnectDeviceListener != null) {
+            onConnectDeviceListener.canConnect(result);
+        }
     }
 
     @Override
     public void onStreetPassGattServerStateChange(DeviceData deviceData, boolean isConnect) {
-        onConnectDeviceListener.onConnectedDeviceData(deviceData);
+        if (onConnectDeviceListener != null) {
+            onConnectDeviceListener.onConnectedDeviceData(deviceData);
+        }
     }
 
     @Override
     public void onBLEConnected(boolean result) {
-        onConnectDeviceListener.onConnectedResult(result);
+        if (onConnectDeviceListener != null) {
+            onConnectDeviceListener.onConnectedResult(result);
+        }
     }
 
 }

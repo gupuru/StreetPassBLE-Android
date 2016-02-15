@@ -54,18 +54,23 @@ public class BLEGattServer extends BluetoothGattServerCallback {
 
     /**
      * サービス開始
+     *
      * @param status
      * @param service
      */
     @Override
     public void onServiceAdded(int status, BluetoothGattService service) {
         super.onServiceAdded(status, service);
-        switch (status){
+        switch (status) {
             case BluetoothGatt.GATT_SUCCESS:
-                onBLEGattServerListener.onServiceAdded(true);
+                if (onBLEGattServerListener != null) {
+                    onBLEGattServerListener.onServiceAdded(true);
+                }
                 break;
             default:
-                onBLEGattServerListener.onServiceAdded(false);
+                if (onBLEGattServerListener != null) {
+                    onBLEGattServerListener.onServiceAdded(false);
+                }
                 break;
         }
     }
@@ -107,13 +112,16 @@ public class BLEGattServer extends BluetoothGattServerCallback {
             characteristic.setValue(value);
             String message = characteristic.getStringValue(offset);
             TransferData transferData = new TransferData(device.getAddress(), message);
-            onBLEGattServerListener.onCharacteristicWriteRequest(transferData);
+            if (onBLEGattServerListener != null) {
+                onBLEGattServerListener.onCharacteristicWriteRequest(transferData);
+            }
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
         }
     }
 
     /**
      * 接続状態
+     *
      * @param device
      * @param status
      * @param newState
@@ -136,7 +144,9 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                 isConnect = false;
                 break;
         }
-        onBLEGattServerListener.onConnectionStateChange(isConnect, connectDevice);
+        if (onBLEGattServerListener != null) {
+            onBLEGattServerListener.onConnectionStateChange(isConnect, connectDevice);
+        }
     }
 
 }

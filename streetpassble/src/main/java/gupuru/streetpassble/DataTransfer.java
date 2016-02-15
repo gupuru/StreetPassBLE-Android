@@ -76,6 +76,7 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
 
     /**
      * BroadCast送信
+     *
      * @param action
      */
     private void updateBroadCast(String action) {
@@ -107,7 +108,9 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
             streetPassGattServerReceiver = null;
         } catch (IllegalArgumentException e) {
             Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            onDataTransferListener.dataTransferError(error);
+            if (onDataTransferListener != null) {
+                onDataTransferListener.dataTransferError(error);
+            }
         }
     }
 
@@ -115,7 +118,9 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
 
     @Override
     public void onStreetPassGattServerWrite(TransferData data) {
-        onDataTransferListener.dataTransferReceiveMessage(data);
+        if (onDataTransferListener != null) {
+            onDataTransferListener.dataTransferReceiveMessage(data);
+        }
     }
 
     //endregion
@@ -124,17 +129,23 @@ public class DataTransfer implements StreetPassGattServerReceiver.OnStreetPassGa
 
     @Override
     public void onBLEServerRead(TransferData data) {
-        onDataTransferListener.dataTransferReceiveMessage(data);
+        if (onDataTransferListener != null) {
+            onDataTransferListener.dataTransferReceiveMessage(data);
+        }
     }
 
     @Override
     public void onBLEServerWrite(TransferData data) {
-        onDataTransferListener.dataTransferSendMessage(data);
+        if (onDataTransferListener != null) {
+            onDataTransferListener.dataTransferSendMessage(data);
+        }
     }
 
     @Override
     public void onBLEServerError(Error error) {
-        onDataTransferListener.dataTransferError(error);
+        if (onDataTransferListener != null) {
+            onDataTransferListener.dataTransferError(error);
+        }
     }
 
     //endregion

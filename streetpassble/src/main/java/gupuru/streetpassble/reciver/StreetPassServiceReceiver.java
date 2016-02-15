@@ -35,21 +35,31 @@ public class StreetPassServiceReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (Constants.ACTION_CONNECT_DEVICE.equals(action)) {
             if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DEVICE_ADDRESS))) {
-                onStreetPassServiceReceiverListener.onConnectDeviceData(
-                        intent.getStringExtra(Constants.DEVICE_ADDRESS)
-                );
+                if (onStreetPassServiceReceiverListener != null) {
+                    onStreetPassServiceReceiverListener.onConnectDeviceData(
+                            intent.getStringExtra(Constants.DEVICE_ADDRESS)
+                    );
+                }
             }
         } else if (Constants.ACTION_SEND_DATA_TO_DEVICE.equals(action)) {
             if (!TextUtils.isEmpty(intent.getStringExtra(Constants.DATA))) {
-                onStreetPassServiceReceiverListener.onSendData(intent.getStringExtra(Constants.DATA));
+                if (onStreetPassServiceReceiverListener != null) {
+                    onStreetPassServiceReceiverListener.onSendData(intent.getStringExtra(Constants.DATA));
+                }
             }
         } else if (Constants.ACTION_CLOSE_GATT.equals(action)) {
-            onStreetPassServiceReceiverListener.onClose();
-        } else if (Constants.ACTION_START_STOP_SCAN.equals(action)){
+            if (onStreetPassServiceReceiverListener != null) {
+                onStreetPassServiceReceiverListener.onClose();
+            }
+        } else if (Constants.ACTION_START_STOP_SCAN.equals(action)) {
             boolean isStart = intent.getBooleanExtra(Constants.DATA, false);
-            onStreetPassServiceReceiverListener.onIsScanStart(isStart);
+            if (onStreetPassServiceReceiverListener != null) {
+                onStreetPassServiceReceiverListener.onIsScanStart(isStart);
+            }
         } else if (Constants.ACTION_DISCONNECT_DEVICE.equals(action)) {
-            onStreetPassServiceReceiverListener.onDisconnectDevice();
+            if (onStreetPassServiceReceiverListener != null) {
+                onStreetPassServiceReceiverListener.onDisconnectDevice();
+            }
         }
     }
 
