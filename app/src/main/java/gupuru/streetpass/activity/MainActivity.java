@@ -30,7 +30,6 @@ import gupuru.streetpass.adapter.BleRecyclerAdapter;
 import gupuru.streetpass.bean.BleData;
 import gupuru.streetpass.constans.Constants;
 import gupuru.streetpass.utils.DividerItemDecoration;
-import gupuru.streetpassble.ConnectDevice;
 import gupuru.streetpassble.StreetPassBle;
 import gupuru.streetpassble.parcelable.AdvertiseSuccess;
 import gupuru.streetpassble.parcelable.DeviceData;
@@ -38,10 +37,9 @@ import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        StreetPassBle.OnStreetPassListener, ConnectDevice.OnConnectDeviceListener {
+        StreetPassBle.OnStreetPassListener, StreetPassBle.OnConnectDeviceListener {
 
     private StreetPassBle streetPassBle;
-    private ConnectDevice connectDevice;
     private TextView statusTextView;
     private TextView connectStatusTextView;
     private ArrayList<BleData> bleDataArrayList;
@@ -80,9 +78,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassListener(this);
-        connectDevice = new ConnectDevice(MainActivity.this);
-        connectDevice.setOnConnectDeviceListener(this);
-        connectDevice.start();
+        streetPassBle.setOnConnectDeviceListener(this);
 
         //BLE対応端末か
         if (streetPassBle.isBle()) {
@@ -109,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         recyclerView.addItemDecoration(new DividerItemDecoration(MainActivity.this, null));
         bleDataArrayList = new ArrayList<>();
         //Adapter初期化
-        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, connectDevice, bleDataArrayList);
+        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, streetPassBle, bleDataArrayList);
         //アダプターにセット
         recyclerView.setAdapter(bleRecyclerAdapter);
         //更新を通知
@@ -147,10 +143,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * アラートダイヤログを表示
+     *
      * @param title
      * @param message
      */
-    private void showAlertDialog(String title, String message){
+    private void showAlertDialog(String title, String message) {
         new AlertDialog.Builder(MainActivity.this)
                 .setTitle(title)
                 .setMessage(message)
@@ -159,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onDataReceived(DeviceData deviceData) {
+    public void onReceivedData(DeviceData deviceData) {
         if (deviceData != null) {
             statusTextView.setText(getString(R.string.receiving_status_message));
 
@@ -186,11 +183,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onError(Error error) {
+    public void onStreetPassError(Error error) {
         statusTextView.setText(error.getErrorMessage());
     }
 
     private boolean isC = false;
+
     @Override
     public void onConnectedResult(boolean isConnected) {
         isC = isConnected;
@@ -206,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onConnectedDeviceData(DeviceData deviceData) {
         if (!isC) {
-            connectDevice.connectDevice(deviceData.getDeviceAddress());
+            streetPassBle.connectDevice(deviceData.getDeviceAddress());
             Intent intent = new Intent(MainActivity.this, ChatActivity.class);
             intent.setAction(Intent.ACTION_VIEW);
             startActivity(intent);
@@ -216,16 +214,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void canConnect(boolean result) {
         bleRecyclerAdapter.setIsOpenServer(result);
-        if (result){
+        if (result) {
             connectStatusTextView.setText(getString(R.string.open_server_status_message));
         } else {
             connectStatusTextView.setText(getString(R.string.close_server_status_message));
         }
-    }
-
-    @Override
-    public void onConnectedError(Error error) {
-        statusTextView.setText(error.getErrorMessage());
     }
 
     @Override
@@ -249,7 +242,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.stop:
                 streetPassBle.stop();
-                connectDevice.stop();
                 bleRecyclerAdapter.clear();
                 bleRecyclerAdapter.notifyDataSetChanged();
                 statusTextView.setText(getString(R.string.stop_status_message));
