@@ -36,24 +36,26 @@ public class StreetPassGattServerReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (Constants.ACTION_GATT_SERVER_WRITE_REQUEST.equals(action)) {
-            TransferData transferData =  intent.getParcelableExtra(Constants.WRITE_REQUEST);
-            if (transferData != null) {
+            TransferData transferData = intent.getParcelableExtra(Constants.WRITE_REQUEST);
+            if (transferData != null && onStreetPassGattServerListener != null) {
                 onStreetPassGattServerListener.onStreetPassGattServerWrite(transferData);
             }
         } else if (Constants.ACTION_BLE_SERVER_READ.equals(action)) {
-            TransferData transferData =  intent.getParcelableExtra(Constants.BLE_SERVER_READ);
-            if (transferData != null) {
+            TransferData transferData = intent.getParcelableExtra(Constants.BLE_SERVER_READ);
+            if (transferData != null && onStreetPassGattServerListener != null) {
                 onStreetPassGattServerListener.onBLEServerRead(transferData);
             }
         } else if (Constants.ACTION_BLE_SERVER_WRITE.equals(action)) {
-            TransferData transferData =  intent.getParcelableExtra(Constants.BLE_SERVER_WRITE);
-            if (transferData != null) {
+            TransferData transferData = intent.getParcelableExtra(Constants.BLE_SERVER_WRITE);
+            if (transferData != null && onStreetPassGattServerListener != null) {
                 onStreetPassGattServerListener.onBLEServerWrite(transferData);
             }
         } else if (Constants.ACTION_BLE_SERVER_ERROR.equals(action)) {
-            onStreetPassGattServerListener.onBLEServerError(
-                    (Error) intent.getExtras().get(Constants.BLE_SERVER_ERROR)
-            );
+            if (onStreetPassGattServerListener != null) {
+                onStreetPassGattServerListener.onBLEServerError(
+                        (Error) intent.getExtras().get(Constants.BLE_SERVER_ERROR)
+                );
+            }
         }
     }
 

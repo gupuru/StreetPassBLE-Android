@@ -35,19 +35,19 @@ public class StreetPassReceiver extends BroadcastReceiver {
         if (Constants.ACTION_SCAN.equals(action)) {
             DeviceData deviceData
                     = (DeviceData) intent.getExtras().get(Constants.SCAN_DATA);
-            if (deviceData != null) {
+            if (deviceData != null && onStreetPassReceiverListener != null) {
                 onStreetPassReceiverListener.onStreetPassScanResult(deviceData);
             }
         } else if (Constants.ACTION_ADV.equals(action)) {
             AdvertiseSuccess advertiseSuccess
                     = (AdvertiseSuccess) intent.getExtras().get(Constants.ADV_DATA);
-            if (advertiseSuccess != null) {
+            if (advertiseSuccess != null && onStreetPassReceiverListener != null) {
                 onStreetPassReceiverListener.onStreetPassAdvertiseResult(advertiseSuccess);
             }
         } else if (Constants.ACTION_SCAN_ADV_ERROR.equals(action)) {
             Error error
                     = (Error) intent.getExtras().get(Constants.ERROR_SCAN_ADV);
-            if (error != null) {
+            if (error != null && onStreetPassReceiverListener != null) {
                 onStreetPassReceiverListener.onStreetPassError(error);
             }
         }
