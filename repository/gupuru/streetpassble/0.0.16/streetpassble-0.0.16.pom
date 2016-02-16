@@ -4,6 +4,6 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>gupuru</groupId>
   <artifactId>streetpassble</artifactId>
-  <version>0.0.15</version>
+  <version>0.0.16</version>
   <packaging>aar</packaging>
 </project>
