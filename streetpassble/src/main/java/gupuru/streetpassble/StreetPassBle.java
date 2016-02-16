@@ -95,12 +95,22 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
         return (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported());
     }
 
+    /**
+     * すれ違い通信が出来るかどうか 可能 -> true, 不可能 -> false
+     *
+     * @return
+     */
+    public boolean isStreetPassBle() {
+        return isBle() && isBluetooth() && isAdvertise();
+    }
+
     //endregion
 
     //region service control
 
     /**
      * すれ違い開始 uuid以外は、デフォルトの設定にする
+     *
      * @param uuid
      */
     public void start(String uuid) {
@@ -114,6 +124,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     /**
      * すれ違い通信開始 自由設定
+     *
      * @param streetPassSettings
      */
     public void start(StreetPassSettings streetPassSettings) {
@@ -126,6 +137,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     /**
      * すれ違い通信開始 端末と接続をするか true -> 接続する(GATTサーバーたてる), false -> しない
+     *
      * @param streetPassSettings
      * @param canConnect
      */
@@ -142,6 +154,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     /**
      * StreetPassService 開始
+     *
      * @param name
      * @param parcelable
      */
@@ -154,6 +167,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     /**
      * StreetPassService 開始 端末と接続する場合
+     *
      * @param name
      * @param parcelable
      * @param canConnect
@@ -335,11 +349,12 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     /**
      * broadcastを送信する
+     *
      * @param action
      * @param name
      * @param flg
      */
-    private void updateBroadCast(String action, String name, boolean flg){
+    private void updateBroadCast(String action, String name, boolean flg) {
         Intent intent = new Intent();
         intent.setAction(action);
         intent.putExtra(name, flg);
@@ -364,6 +379,7 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
 
     /**
      * ライブラリのバージョン取得
+     *
      * @return
      */
     public String getLibraryVersion() {
