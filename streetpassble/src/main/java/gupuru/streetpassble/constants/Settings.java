@@ -5,8 +5,8 @@ import android.bluetooth.le.ScanSettings;
 
 public class Settings {
 
-    public static final String SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
-    public static final String CHARACTERISTIC_UUID = "00002a29-0000-1000-8000-00805f9b34fb";
+    public static final String SERVICE_UUID = "0000180A-0000-1000-8000-00805F9B34FB";
+    public static final String CHARACTERISTIC_UUID = "00002A29-0000-1000-8000-00805F9B34FB";
     public static final int SCAN__MODE = ScanSettings.SCAN_MODE_LOW_POWER;
     public static final int ADVERTISE_MODE = AdvertiseSettings.ADVERTISE_MODE_BALANCED;
     public static final int TX_POWER_LEVEL = AdvertiseSettings.ADVERTISE_TX_POWER_LOW;
