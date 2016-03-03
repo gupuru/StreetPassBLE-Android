@@ -203,9 +203,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onConnectedDeviceData(DeviceData deviceData) {
         if (!isC) {
             streetPassBle.connectDevice(deviceData.getDeviceAddress());
-            Intent intent = new Intent(MainActivity.this, ChatActivity.class);
-            intent.setAction(Intent.ACTION_VIEW);
-            startActivity(intent);
         }
     }
 
@@ -234,8 +231,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         .advertiseIncludeDeviceName(true)
                         .advertiseIncludeTxPowerLevel(true)
                         .serviceUuid(Constants.SERVICE_UUID)
-                        .characteristicUuid(Constants.CHARACTERISTIC_UUID)
-                        .defaultResponseData("first")
                         .sendDataMaxSize(true)
                         .data(getString(R.string.test_message))
                         .build();

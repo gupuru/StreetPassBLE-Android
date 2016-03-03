@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
@@ -18,11 +19,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
-import android.os.ParcelUuid;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import gupuru.streetpassble.callback.AdvertiseBle;
 import gupuru.streetpassble.callback.ScanBle;
@@ -92,8 +91,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
             //StreetPassSettings取得
             streetPassSettings = intent.getParcelableExtra(Constants.STREET_PASS_SETTINGS);
             if (intent.getBooleanExtra(Constants.CAN_CONNECT, false)) {
-                bleServer = new BLEServer(streetPassSettings.getServiceUuid()
-                        , streetPassSettings.getCharacteristicUuid());
+                bleServer = new BLEServer(streetPassSettings);
                 bleServer.setOnBLEServerListener(this);
                 openGattServer();
             }
@@ -146,28 +144,30 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
 
     private void openGattServer() {
         BluetoothManager manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bleGattServer = new BLEGattServer();
+        bleGattServer = new BLEGattServer(bleServer);
         bleGattServer.setOnBLEGattServerListener(this);
         gattServer = manager.openGattServer(context, bleGattServer);
         bleGattServer.setBluetoothGattServer(gattServer);
-        //初期メッセージ登録
-        String defaultData = streetPassSettings.getDefaultResponseData();
-        if (streetPassServiceUtil.isLimitDataSize(defaultData, DATA_MIN_SIZE)) {
-            defaultData = streetPassServiceUtil.trimByte(defaultData, DATA_MIN_SIZE, "UTF-8");
-        }
-        bleGattServer.setDefaultSendResponseData(defaultData);
+
         //Serviceを登録
         BluetoothGattService service = new BluetoothGattService(
-                UUID.fromString(streetPassSettings.getServiceUuid()),
+                streetPassSettings.getServiceUuid().getUuid(),
                 BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        BluetoothGattCharacteristic mCharacteristic = new BluetoothGattCharacteristic(
-                UUID.fromString(streetPassSettings.getCharacteristicUuid()),
+
+        BluetoothGattCharacteristic readCharacteristic = new BluetoothGattCharacteristic(
+                streetPassSettings.getReadCharacteristicUuid().getUuid(),
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY |
-                        BluetoothGattCharacteristic.PROPERTY_READ |
-                        BluetoothGattCharacteristic.PROPERTY_WRITE,
-                BluetoothGattCharacteristic.PERMISSION_READ |
-                        BluetoothGattCharacteristic.PERMISSION_WRITE);
-        service.addCharacteristic(mCharacteristic);
+                        BluetoothGattCharacteristic.PROPERTY_READ,
+                BluetoothGattCharacteristic.PERMISSION_READ
+        );
+
+        BluetoothGattDescriptor dataDescriptor = new BluetoothGattDescriptor(
+                streetPassSettings.getWriteCharacteristicUuid().getUuid()
+                , BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
+        readCharacteristic.addDescriptor(dataDescriptor);
+
+        service.addCharacteristic(readCharacteristic);
+
         gattServer.addService(service);
     }
 
@@ -178,7 +178,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
         if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
             List<ScanFilter> filters = new ArrayList<>();
             ScanFilter filter = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(UUID.fromString(streetPassSettings.getServiceUuid())))
+                    .setServiceUuid(streetPassSettings.getServiceUuid())
                     .build();
             filters.add(filter);
 
@@ -186,7 +186,7 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
                     .setScanMode(streetPassSettings.getScanMode())
                     .build();
 
-            scanBle = new ScanBle(context);
+            scanBle = new ScanBle(context, bleServer, bluetoothGatt, bluetoothAdapter);
 
             if (bluetoothLeScanner == null) {
                 bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -227,10 +227,9 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
             }
 
             // アドバタイジングデータ
-            ParcelUuid pUuid = new ParcelUuid(UUID.fromString(streetPassSettings.getServiceUuid()));
             AdvertiseData advertiseData = new AdvertiseData.Builder()
-                    .addServiceUuid(pUuid)
-                    .addServiceData(pUuid, serviceData.getBytes())
+                    .addServiceUuid(streetPassSettings.getServiceUuid())
+                    .addServiceData(streetPassSettings.getServiceUuid(), serviceData.getBytes())
                     .setIncludeDeviceName(streetPassSettings.isAdvertiseIncludeDeviceName())
                     .setIncludeTxPowerLevel(streetPassSettings.isAdvertiseIncludeTxPowerLevel())
                     .build();
@@ -242,32 +241,6 @@ public class StreetPassService extends Service implements BLEGattServer.OnBLEGat
     }
 
     //region StreetPassServiceReceiver callback
-
-    @Override
-    public void onConnectDeviceData(String deviceAddress) {
-        if (deviceAddress != null && !deviceAddress.equals("")) {
-            if (bleServer != null) {
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-                bluetoothGatt = device.connectGatt(context, false, bleServer);
-                bluetoothGatt.connect();
-            }
-        }
-    }
-
-    @Override
-    public void onSendData(String data) {
-        if (bleServer != null) {
-            int size = DATA_MIN_SIZE;
-            if (streetPassSettings != null && streetPassSettings.isSendDataMaxSize()) {
-                size = DATA_MAX_SIZE;
-            }
-            if (streetPassServiceUtil.isLimitDataSize(data, size)) {
-                bleServer.writeData(streetPassServiceUtil.trimByte(data, size, "UTF-8"), size);
-            } else {
-                bleServer.writeData(data, size);
-            }
-        }
-    }
 
     @Override
     public void onClose() {

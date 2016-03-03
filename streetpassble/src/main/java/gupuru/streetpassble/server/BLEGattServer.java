@@ -3,10 +3,12 @@ package gupuru.streetpassble.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.util.Log;
 
 import gupuru.streetpassble.parcelable.TransferData;
 
@@ -16,11 +18,13 @@ import gupuru.streetpassble.parcelable.TransferData;
 public class BLEGattServer extends BluetoothGattServerCallback {
 
     private BluetoothGattServer bluetoothGattServer;
+    private BLEServer bleServer;
     private BluetoothDevice connectDevice;
     private String defaultSendResponseData = "";
     private OnBLEGattServerListener onBLEGattServerListener;
 
-    public BLEGattServer() {
+    public BLEGattServer(BLEServer bleServer) {
+        this.bleServer = bleServer;
     }
 
     public interface OnBLEGattServerListener {
@@ -66,7 +70,7 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                 if (onBLEGattServerListener != null) {
                     onBLEGattServerListener.onServiceAdded(true);
                 }
-                break;
+            break;
             default:
                 if (onBLEGattServerListener != null) {
                     onBLEGattServerListener.onServiceAdded(false);
@@ -119,6 +123,15 @@ public class BLEGattServer extends BluetoothGattServerCallback {
         }
     }
 
+
+    @Override
+    public void onDescriptorWriteRequest(BluetoothDevice device, int requestId
+            , BluetoothGattDescriptor descriptor, boolean preparedWrite
+            , boolean responseNeeded, int offset, byte[] value) {
+        Log.d("ここ", "onDescriptorWriteRequest");
+    }
+
+
     /**
      * 接続状態
      *
@@ -134,6 +147,7 @@ public class BLEGattServer extends BluetoothGattServerCallback {
             case BluetoothProfile.STATE_CONNECTED:
                 connectDevice = device;
                 isConnect = true;
+                bleServer.writeData("tes", 20);
                 break;
             case BluetoothProfile.STATE_DISCONNECTED:
                 connectDevice = null;

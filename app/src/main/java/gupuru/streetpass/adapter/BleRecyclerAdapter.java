@@ -1,7 +1,6 @@
 package gupuru.streetpass.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,7 +10,6 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import gupuru.streetpass.R;
-import gupuru.streetpass.activity.ChatActivity;
 import gupuru.streetpass.bean.BleData;
 import gupuru.streetpassble.StreetPassBle;
 
@@ -57,19 +55,6 @@ public class BleRecyclerAdapter extends RecyclerView.Adapter<BleRecyclerAdapter.
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, final int i) {
         View v = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.recycler_view_ble, viewGroup, false);
-
-        v.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isOpenServer) {
-                    streetPassBle.connectDevice(bleDataArrayList.get(i).getDeviceAddress());
-                    Intent intent = new Intent(context, ChatActivity.class);
-                    intent.putExtra("device", bleDataArrayList.get(i).getDeviceAddress());
-                    intent.setAction(Intent.ACTION_VIEW);
-                    context.startActivity(intent);
-                }
-            }
-        });
 
         return new ViewHolder(v);
     }
