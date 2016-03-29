@@ -104,8 +104,8 @@ public class StreetPassSettings implements Parcelable {
 
     private StreetPassSettings(Parcel in) {
         serviceUuid = in.readString();
-        readCharacteristicUuid = in.readString();
         writeCharacteristicUuid = in.readString();
+        readCharacteristicUuid = in.readString();
         data = in.readString();
         scanMode = in.readInt();
         advertiseMode = in.readInt();

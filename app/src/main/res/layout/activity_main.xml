@@ -16,31 +16,12 @@
         android:minHeight="?attr/actionBarSize"
         app:popupTheme="@style/AppBarStyle" />
 
-    <LinearLayout
+    <EditText
+        android:id="@+id/send_data_edit_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:orientation="horizontal"
-        android:weightSum="5">
-
-        <TextView
-            android:id="@+id/connect_status"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/black"
-            android:textSize="18sp"
-            android:text="@string/close_server_status_message" />
-
-        <TextView
-            android:id="@+id/status"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:text="@string/default_status_message"
-            android:textColor="@color/black"
-            android:textSize="18sp" />
-    </LinearLayout>
+        android:inputType="text" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -66,11 +47,10 @@
 
     </LinearLayout>
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_view"
+    <TextView
+        android:id="@+id/log_text_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="10dp"
-        android:scrollbars="vertical" />
-
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/log_text_view_status" />
 </LinearLayout>

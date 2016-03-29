@@ -1,33 +1,58 @@
 package gupuru.streetpassble;
 
-import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.BluetoothLeAdvertiser;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanSettings;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.Parcelable;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import gupuru.streetpassble.constants.Constants;
+import gupuru.streetpassble.callback.AdvertiseBle;
+import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.parcelable.AdvertiseSuccess;
 import gupuru.streetpassble.parcelable.DeviceData;
 import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
-import gupuru.streetpassble.reciver.ConnectDeviceReceiver;
-import gupuru.streetpassble.reciver.StreetPassReceiver;
-import gupuru.streetpassble.service.StreetPassService;
+import gupuru.streetpassble.server.BLEGattServer;
+import gupuru.streetpassble.server.BLEServer;
+import gupuru.streetpassble.util.StreetPassServiceUtil;
 
-public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverListener,
-        ConnectDeviceReceiver.OnConnectDeviceReceiverListener {
+public class StreetPassBle {
+
+
+    private static final int DATA_MAX_SIZE = 512;
+    private static final int DATA_MIN_SIZE = 20;
 
     private Context context;
     private OnStreetPassListener onStreetPassListener;
-    private IntentFilter streetPassIntentFilter;
-    private StreetPassReceiver streetPassReceiver;
-    private ConnectDeviceReceiver connectDeviceReceiver;
     private OnConnectDeviceListener onConnectDeviceListener;
+    private StreetPassServiceUtil streetPassServiceUtil;
+
+    private ScanBle scanBle;
+    private AdvertiseBle advertiseBle;
+    private BluetoothLeScanner bluetoothLeScanner;
+    private BluetoothLeAdvertiser bluetoothLeAdvertiser;
+    private BluetoothAdapter bluetoothAdapter;
+    private StreetPassSettings streetPassSettings;
+    private BluetoothManager bluetoothManager;
+
+    private BluetoothGattServer gattServer;
+    private BLEServer bleServer;
+    private BLEGattServer bleGattServer;
+    private BluetoothGatt bluetoothGatt;
+
 
     public StreetPassBle(Context context) {
         this.context = context;
@@ -109,273 +134,34 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     //region service control
 
     /**
-     * すれ違い開始 uuid以外は、デフォルトの設定にする
-     *
-     * @param uuid
-     */
-    public void start(String uuid) {
-        if (!serviceIsRunning()) {
-            initStreetPassReceiver();
-            context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
-            StreetPassSettings streetPassSettings = new StreetPassSettings.Builder().serviceUuid(uuid).build();
-            startService(Constants.STREET_PASS_SETTINGS, streetPassSettings);
-        }
-    }
-
-    /**
-     * すれ違い通信開始 自由設定
+     * すれ違い通信開始
      *
      * @param streetPassSettings
+     *
      */
     public void start(StreetPassSettings streetPassSettings) {
-        if (!serviceIsRunning()) {
-            initStreetPassReceiver();
-            context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
-            startService(Constants.STREET_PASS_SETTINGS, streetPassSettings);
-        }
+        this.streetPassSettings = streetPassSettings;
+        initStreetPass();
     }
 
     /**
-     * すれ違い通信開始 端末と接続をするか true -> 接続する(GATTサーバーたてる), false -> しない
-     *
-     * @param streetPassSettings
-     * @param canConnect
-     */
-    public void start(StreetPassSettings streetPassSettings, boolean canConnect) {
-        if (canConnect) {
-            connectDeviceRegister();
-        }
-        if (!serviceIsRunning()) {
-            initStreetPassReceiver();
-            context.registerReceiver(streetPassReceiver, streetPassIntentFilter);
-            startService(Constants.STREET_PASS_SETTINGS, streetPassSettings, canConnect);
-        }
-    }
-
-    /**
-     * StreetPassService 開始
-     *
-     * @param name
-     * @param parcelable
-     */
-    private void startService(String name, Parcelable parcelable) {
-        Intent intent = new Intent(context,
-                StreetPassService.class);
-        intent.putExtra(name, parcelable);
-        context.startService(intent);
-    }
-
-    /**
-     * StreetPassService 開始 端末と接続する場合
-     *
-     * @param name
-     * @param parcelable
-     * @param canConnect
-     */
-    private void startService(String name, Parcelable parcelable, boolean canConnect) {
-        Intent intent = new Intent(context,
-                StreetPassService.class);
-        intent.putExtra(name, parcelable);
-        intent.putExtra(Constants.CAN_CONNECT, canConnect);
-        context.startService(intent);
-    }
-
-    /**
-     * Service停止(BLEの送受信停止)
+     * BLE停止
      */
     public void stop() {
-        unregisterStreetPassReceiver();
-        connectDeviceUnregister();
-        if (serviceIsRunning()) {
-            Intent intent = new Intent(context,
-                    StreetPassService.class);
-            context.stopService(intent);
+        stopScan();
+        if (bluetoothLeAdvertiser != null && advertiseBle != null) {
+            bluetoothLeAdvertiser.stopAdvertising(advertiseBle);
+            bluetoothLeAdvertiser = null;
         }
-    }
-
-    /**
-     * serviceが動いているか  稼働中 -> true, 非稼働中 -> false
-     *
-     * @return
-     */
-    public boolean isRunning() {
-        return serviceIsRunning();
-    }
-
-    /**
-     * Serviceが稼働しているか。稼働中->true, 非稼働中->falseを返す
-     *
-     * @return
-     */
-    private boolean serviceIsRunning() {
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> services = activityManager.getRunningServices(Integer.MAX_VALUE);
-
-        for (ActivityManager.RunningServiceInfo info : services) {
-            if (Constants.SERVICE_NAME.equals(info.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * BLE scanを停止する
-     */
-    public void stopScan() {
-        updateBroadCast(Constants.ACTION_START_STOP_SCAN, Constants.DATA, false);
-    }
-
-    /**
-     * BLE scanを開始する
-     */
-    public void startScan() {
-        updateBroadCast(Constants.ACTION_START_STOP_SCAN, Constants.DATA, true);
-    }
-
-    //endregion
-
-    //region Receiver
-
-    /**
-     * StreetPassReceiverの初期化
-     */
-    private void initStreetPassReceiver() {
-        streetPassReceiver = new StreetPassReceiver();
-        streetPassReceiver.setOnStreetPassReceiverListener(this);
-        streetPassIntentFilter = new IntentFilter();
-        streetPassIntentFilter.addAction(Constants.ACTION_SCAN);
-        streetPassIntentFilter.addAction(Constants.ACTION_SCAN_ADV_ERROR);
-        streetPassIntentFilter.addAction(Constants.ACTION_ADV);
-    }
-
-    /**
-     * StreetPassReceiver解除
-     */
-    private void unregisterStreetPassReceiver() {
-        try {
-            context.unregisterReceiver(streetPassReceiver);
-        } catch (IllegalArgumentException e) {
-            Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-            if (onStreetPassListener != null) {
-                onStreetPassListener.onStreetPassError(error);
-            }
-        }
-    }
-
-    /**
-     * connectDevice Receiver登録
-     */
-    private void connectDeviceRegister() {
-        connectDeviceReceiver = new ConnectDeviceReceiver();
-        connectDeviceReceiver.setOnConnectDeviceReceiverListener(this);
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Constants.ACTION_GATT_SERVICE_ADDED);
-        intentFilter.addAction(Constants.ACTION_GATT_SERVER_STATE_CHANGE);
-        intentFilter.addAction(Constants.ACTION_BLE_SERVER_CONNECTED);
-        context.registerReceiver(connectDeviceReceiver, intentFilter);
-    }
-
-    /**
-     * connectDevice Receiver解除
-     */
-    private void connectDeviceUnregister() {
-        if (connectDeviceReceiver != null) {
-            try {
-                context.unregisterReceiver(connectDeviceReceiver);
-                connectDeviceReceiver = null;
-            } catch (IllegalArgumentException e) {
-                Error error = new Error(Constants.CODE_UN_REGISTER_RECEIVER_ERROR, e.toString());
-                if (onStreetPassListener != null) {
-                    onStreetPassListener.onStreetPassError(error);
-                }
-            }
-        }
-    }
-
-    //endregion
-
-    //region StreetPassReceiver callback
-
-    @Override
-    public void onStreetPassScanResult(DeviceData deviceData) {
-        if (onStreetPassListener != null) {
-            onStreetPassListener.onReceivedData(deviceData);
-        }
-    }
-
-    @Override
-    public void onStreetPassAdvertiseResult(AdvertiseSuccess advertiseSuccess) {
-        if (onStreetPassListener != null) {
-            onStreetPassListener.onAdvertiseResult(advertiseSuccess);
-        }
-    }
-
-    @Override
-    public void onStreetPassError(Error error) {
-        if (onStreetPassListener != null) {
-            onStreetPassListener.onStreetPassError(error);
-        }
-    }
-
-    //endregion
-
-    //region OnConnectDeviceReceiverListener
-
-    @Override
-    public void onStreetPassServiceAdded(boolean result) {
-        if (onConnectDeviceListener != null) {
-            onConnectDeviceListener.canConnect(result);
-        }
-    }
-
-    @Override
-    public void onStreetPassGattServerStateChange(DeviceData deviceData, boolean isConnect) {
-        if (onConnectDeviceListener != null) {
-            onConnectDeviceListener.onConnectedDeviceData(deviceData);
-        }
-    }
-
-    @Override
-    public void onBLEConnected(boolean result) {
-        if (onConnectDeviceListener != null) {
-            onConnectDeviceListener.onConnectedResult(result);
-        }
-    }
-
-    //endregion
-
-    //region broadcast
-
-    /**
-     * broadcastを送信する
-     *
-     * @param action
-     * @param name
-     * @param flg
-     */
-    private void updateBroadCast(String action, String name, boolean flg) {
-        Intent intent = new Intent();
-        intent.setAction(action);
-        intent.putExtra(name, flg);
-        context.sendBroadcast(intent);
+        closeGattServer();
+        streetPassSettings = null;
+        streetPassServiceUtil = null;
+        bleServer = null;
     }
 
     //endregion
 
     //region Sub Methods
-
-    /**
-     * 端末に接続する
-     *
-     * @param address
-     */
-    public void connectDevice(String address) {
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_CONNECT_DEVICE);
-        intent.putExtra(Constants.DEVICE_ADDRESS, address);
-        context.sendBroadcast(intent);
-    }
 
     /**
      * ライブラリのバージョン取得
@@ -387,5 +173,141 @@ public class StreetPassBle implements StreetPassReceiver.OnStreetPassReceiverLis
     }
 
     //endregion
+
+
+    private void initStreetPass() {
+
+        streetPassServiceUtil = new StreetPassServiceUtil();
+
+        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+
+        bluetoothAdapter = bluetoothManager.getAdapter();
+        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+        bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+
+        if (streetPassSettings.isAdvertiseConnectable()) {
+            bleServer = new BLEServer(streetPassSettings);
+            openGattServer();
+        }
+        //BLEの送信に対応しているか
+        if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
+            //対応->送受信
+            scan();
+            advertising();
+        } else {
+            //非対応->受信のみ
+            scan();
+        }
+    }
+
+    private void openGattServer() {
+        //Serviceを登録
+        BluetoothGattService service = new BluetoothGattService(
+                streetPassSettings.getServiceUuid().getUuid(),
+                BluetoothGattService.SERVICE_TYPE_PRIMARY);
+
+        BluetoothGattCharacteristic readCharacteristic = new BluetoothGattCharacteristic(
+                streetPassSettings.getReadCharacteristicUuid().getUuid(),
+                BluetoothGattCharacteristic.PROPERTY_NOTIFY |
+                        BluetoothGattCharacteristic.PROPERTY_READ |
+                        BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_READ |
+                        BluetoothGattCharacteristic.PERMISSION_WRITE |
+                        BluetoothGattCharacteristic.PROPERTY_NOTIFY
+        );
+
+        BluetoothGattDescriptor dataDescriptor = new BluetoothGattDescriptor(
+                streetPassSettings.getReadCharacteristicUuid().getUuid()
+                , BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
+        readCharacteristic.addDescriptor(dataDescriptor);
+
+        service.addCharacteristic(readCharacteristic);
+
+        bleGattServer = new BLEGattServer(readCharacteristic);
+        gattServer = bluetoothManager.openGattServer(context, bleGattServer);
+        bleGattServer.setBluetoothGattServer(gattServer);
+
+        bleGattServer.setDefaultSendResponseData("neko");
+
+        gattServer.addService(service);
+    }
+
+    /**
+     * BLE scan開始
+     */
+    private void scan() {
+        if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
+            List<ScanFilter> filters = new ArrayList<>();
+            ScanFilter filter = new ScanFilter.Builder()
+                    .setServiceUuid(streetPassSettings.getServiceUuid())
+                    .build();
+            filters.add(filter);
+
+            ScanSettings settings = new ScanSettings.Builder()
+                    .setScanMode(streetPassSettings.getScanMode())
+                    .build();
+
+            scanBle = new ScanBle(context, bleServer, bluetoothGatt, bluetoothAdapter);
+
+            if (bluetoothLeScanner == null) {
+                bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+            }
+
+            bluetoothLeScanner.startScan(filters, settings, scanBle);
+        }
+    }
+
+    private void advertising() {
+        if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
+            // 設定
+            AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                    .setAdvertiseMode(streetPassSettings.getAdvertiseMode())
+                    .setTxPowerLevel(streetPassSettings.getTxPowerLevel())
+                    .setTimeout(streetPassSettings.getTimeOut())
+                    .setConnectable(streetPassSettings.isAdvertiseConnectable())
+                    .build();
+
+            String serviceData = streetPassSettings.getData();
+            if (serviceData == null) {
+                serviceData = "";
+            } else {
+                if (streetPassServiceUtil.isLimitDataSize(serviceData, DATA_MIN_SIZE)) {
+                    serviceData = streetPassServiceUtil.trimByte(serviceData, DATA_MIN_SIZE, "UTF-8");
+                }
+            }
+
+            // アドバタイジングデータ
+            AdvertiseData advertiseData = new AdvertiseData.Builder()
+                    .addServiceUuid(streetPassSettings.getServiceUuid())
+                    .addServiceData(streetPassSettings.getServiceUuid(), serviceData.getBytes())
+                    .setIncludeDeviceName(streetPassSettings.isAdvertiseIncludeDeviceName())
+                    .setIncludeTxPowerLevel(streetPassSettings.isAdvertiseIncludeTxPowerLevel())
+                    .build();
+
+            advertiseBle = new AdvertiseBle(context);
+
+            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseBle);
+        }
+    }
+
+    private void stopScan() {
+        if (scanBle != null && bluetoothLeScanner != null) {
+            bluetoothLeScanner.stopScan(scanBle);
+            bluetoothLeScanner = null;
+            scanBle = null;
+        }
+    }
+
+    private void closeGattServer() {
+        if (gattServer != null) {
+            gattServer.clearServices();
+            gattServer.close();
+            gattServer = null;
+        }
+        bleGattServer = null;
+    }
+
+
+
 
 }

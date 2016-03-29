@@ -4,10 +4,12 @@ package gupuru.streetpassble.server;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.util.Log;
 
+import java.util.List;
 import java.util.UUID;
 
 import gupuru.streetpassble.constants.Constants;
@@ -60,9 +62,12 @@ public class BLEServer extends BluetoothGattCallback {
             }
         }
     }
-/*
+
     public void readData() {
-        BluetoothGattCharacteristic read = getCharacteristicData(serviceUuid, characteristicUuid);
+        BluetoothGattCharacteristic read = getCharacteristicData(
+                streetPassSettings.getServiceUuid().getUuid(),
+                streetPassSettings.getReadCharacteristicUuid().getUuid()
+        );
         if (read != null) {
             bluetoothGatt.readCharacteristic(read);
         } else {
@@ -70,7 +75,7 @@ public class BLEServer extends BluetoothGattCallback {
                 onBLEServerListener.onBLEServerError(getErrorParcelable("Characteristic uuidがnullです。"));
             }
         }
-    }*/
+    }
 
     private BluetoothGattCharacteristic getCharacteristicData(UUID sid, UUID cid) {
         if (bluetoothGatt == null || bluetoothGatt.getServices() == null) {
@@ -131,23 +136,35 @@ public class BLEServer extends BluetoothGattCallback {
                         break;
                     } else {
                         // サービスを見つけた
-                      /*  List<BluetoothGattCharacteristic> characteristics =
+                        List<BluetoothGattCharacteristic> characteristics =
                                 service.getCharacteristics();
                         for (BluetoothGattCharacteristic characteristic : characteristics) {
                             if (characteristic != null) {
+
                                 // Notification を要求する
                                 gatt.setCharacteristicNotification(characteristic, true);
+
+                                for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
+                                    Log.d("ここ", "ごりら " + descriptor.getUuid().toString());
+                                }
+
+                                // Characteristic の Notification 有効化
+                               /* BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
+                                        streetPassSettings.getReadCharacteristicUuid().getUuid());
+                                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                                gatt.writeDescriptor(descriptor);*/
+
+                                readData();
+
+                                // Notification を要求する
+                               /* gatt.setCharacteristicNotification(characteristic, true);
                                 for (BluetoothGattDescriptor descriptor: characteristic.getDescriptors()){
                                     descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                                     gatt.writeDescriptor(descriptor);
-                                }
+                                }*/
 
                             }
-                        }*/
-
-
-                        writeData("ts", 20);
-
+                        }
                     }
                 }
                 break;
@@ -169,9 +186,12 @@ public class BLEServer extends BluetoothGattCallback {
 
         if (characteristic != null && gatt != null) {
             String data = characteristic.getStringValue(0);
+            Log.d("ここ", "onCharacteristicRead " + data);
             TransferData transferData = new TransferData(gatt.getDevice().getAddress(), data);
             onBLEServerListener.onBLEServerRead(transferData);
         }
+
+//        writeData("e", 20);
     }
 
     @Override
@@ -196,7 +216,7 @@ public class BLEServer extends BluetoothGattCallback {
 
         BluetoothGattCharacteristic write = getCharacteristicData(
                 streetPassSettings.getServiceUuid().getUuid(),
-                streetPassSettings.getWriteCharacteristicUuid().getUuid());
+                streetPassSettings.getReadCharacteristicUuid().getUuid());
         if (bluetoothGatt != null && write != null) {
             write.setValue(message.getBytes());
             bluetoothGatt.writeCharacteristic(write);

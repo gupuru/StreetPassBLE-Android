@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView statusTextView;
     private TextView connectStatusTextView;
     private ArrayList<BleData> bleDataArrayList;
-    private BleRecyclerAdapter bleRecyclerAdapter;
     private RecyclerView recyclerView;
 
     @Override
@@ -94,21 +93,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startBtn.setVisibility(View.GONE);
             startBtn.setVisibility(View.GONE);
         }
-        //RecyclerView初期化
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        recyclerView.setHasFixedSize(true);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.this);
-        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        //区切り線をつける
-        recyclerView.addItemDecoration(new DividerItemDecoration(MainActivity.this, null));
-        bleDataArrayList = new ArrayList<>();
-        //Adapter初期化
-        bleRecyclerAdapter = new BleRecyclerAdapter(MainActivity.this, streetPassBle, bleDataArrayList);
-        //アダプターにセット
-        recyclerView.setAdapter(bleRecyclerAdapter);
-        //更新を通知
-        bleRecyclerAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -151,6 +135,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setMessage(message)
                 .setPositiveButton(getString(R.string.alert_positive_button), null)
                 .show();
+    }
+
+    private void showLogTextView() {
+
     }
 
     @Override
@@ -202,7 +190,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onConnectedDeviceData(DeviceData deviceData) {
         if (!isC) {
-            streetPassBle.connectDevice(deviceData.getDeviceAddress());
         }
     }
 
@@ -235,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         .data(getString(R.string.test_message))
                         .build();
 
-                streetPassBle.start(streetPassSettings, true);
+                streetPassBle.start(streetPassSettings);
                 break;
             case R.id.stop:
                 streetPassBle.stop();

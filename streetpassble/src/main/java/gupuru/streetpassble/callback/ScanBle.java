@@ -70,10 +70,10 @@ public class ScanBle extends ScanCallback {
             if (deviceDataArrayList.isEmpty()) {
                 deviceDataArrayList.add(deviceData);
 
-             /*   BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
                 bluetoothGatt = device.connectGatt(context, true, bleServer);
                 bluetoothGatt.connect();
-*/
+
                 Intent intent = new Intent();
                 intent.setAction(Constants.ACTION_SCAN);
                 intent.putExtra(Constants.SCAN_DATA, deviceData);
@@ -83,11 +83,11 @@ public class ScanBle extends ScanCallback {
                     for (DeviceData aDeviceData : deviceDataArrayList) {
                         if (!aDeviceData.getDeviceAddress().equals(deviceData.getDeviceAddress())) {
                             deviceDataArrayList.add(deviceData);
-/*
+
+
                             BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
                             bluetoothGatt = device.connectGatt(context, false, bleServer);
                             bluetoothGatt.connect();
-*/
 
 
 

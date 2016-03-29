@@ -24,4 +24,5 @@
     <string name="open_server_status_message">接続:OK</string>
     <string name="close_server_status_message">接続:NG</string>
     <string name="cant_send_data">送信できます。</string>
+    <string name="log_text_view_status">Status heare</string>
 </resources>
