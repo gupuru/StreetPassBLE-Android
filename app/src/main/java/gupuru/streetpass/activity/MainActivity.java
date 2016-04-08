@@ -3,15 +3,12 @@ package gupuru.streetpass.activity;
 import android.Manifest;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.ScanSettings;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,31 +16,16 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-
 import gupuru.streetpass.R;
-import gupuru.streetpass.adapter.BleRecyclerAdapter;
-import gupuru.streetpass.bean.BleData;
 import gupuru.streetpass.constans.Constants;
-import gupuru.streetpass.utils.DividerItemDecoration;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.parcelable.AdvertiseSuccess;
-import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,
-        StreetPassBle.OnStreetPassListener, StreetPassBle.OnConnectDeviceListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private StreetPassBle streetPassBle;
-    private TextView statusTextView;
-    private TextView connectStatusTextView;
-    private ArrayList<BleData> bleDataArrayList;
-    private RecyclerView recyclerView;
+    private TextView logTextView;
+    private boolean isStart = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,30 +50,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-        Button startBtn = (Button) findViewById(R.id.start);
-        startBtn.setOnClickListener(this);
-        Button stopBtn = (Button) findViewById(R.id.stop);
-        stopBtn.setOnClickListener(this);
-        statusTextView = (TextView) findViewById(R.id.status);
-        connectStatusTextView = (TextView) findViewById(R.id.connect_status);
+        Button startStopBtn = (Button) findViewById(R.id.start_stop);
+        startStopBtn.setOnClickListener(this);
+        logTextView = (TextView) findViewById(R.id.log_text_view);
 
         streetPassBle = new StreetPassBle(MainActivity.this);
-        streetPassBle.setOnStreetPassListener(this);
-        streetPassBle.setOnConnectDeviceListener(this);
 
         //BLE対応端末か
         if (streetPassBle.isBle()) {
             if (streetPassBle.isAdvertise()) {
                 //送信可能
-                statusTextView.setText(getString(R.string.send_receive_status_message));
+                logTextView.setText(getString(R.string.send_receive_status_message));
             } else {
                 //受信のみ
-                statusTextView.setText(getString(R.string.receive_status_message));
+                logTextView.setText(getString(R.string.receive_status_message));
             }
         } else {
             //非対応
-            startBtn.setVisibility(View.GONE);
-            startBtn.setVisibility(View.GONE);
+            startStopBtn.setVisibility(View.GONE);
+            startStopBtn.setVisibility(View.GONE);
         }
     }
 
@@ -137,99 +114,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .show();
     }
 
-    private void showLogTextView() {
-
-    }
-
-    @Override
-    public void onReceivedData(DeviceData deviceData) {
-        if (deviceData != null) {
-            statusTextView.setText(getString(R.string.receiving_status_message));
-
-            final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN);
-            final Date date = new Date(System.currentTimeMillis());
-
-            String deviceName = getString(R.string.no_name);
-            if (deviceData.getDeviceName() != null && !deviceData.getDeviceName().equals("")) {
-                deviceName = deviceData.getDeviceName();
-            }
-
-            BleData bleData = new BleData(deviceName, deviceData.getDeviceAddress()
-                    , deviceData.getServiceData(), df.format(date));
-            bleDataArrayList.add(bleData);
-            bleRecyclerAdapter.setbleDataArrayList(bleDataArrayList);
-            bleRecyclerAdapter.notifyDataSetChanged();
-            recyclerView.smoothScrollToPosition(bleDataArrayList.size() - 1);
-        }
-    }
-
-    @Override
-    public void onAdvertiseResult(AdvertiseSuccess advertiseSuccess) {
-        statusTextView.setText(getString(R.string.sending_status_message));
-    }
-
-    @Override
-    public void onStreetPassError(Error error) {
-        statusTextView.setText(error.getErrorMessage());
-    }
-
-    private boolean isC = false;
-
-    @Override
-    public void onConnectedResult(boolean isConnected) {
-        isC = isConnected;
-        if (isConnected) {
-            connectStatusTextView.setText(getString(R.string.connected_device_message));
-        } else {
-            Intent intent = new Intent();
-            intent.setAction("disconnect");
-            sendBroadcast(intent);
-        }
-    }
-
-    @Override
-    public void onConnectedDeviceData(DeviceData deviceData) {
-        if (!isC) {
-        }
-    }
-
-    @Override
-    public void canConnect(boolean result) {
-        bleRecyclerAdapter.setIsOpenServer(result);
-        if (result) {
-            connectStatusTextView.setText(getString(R.string.open_server_status_message));
-        } else {
-            connectStatusTextView.setText(getString(R.string.close_server_status_message));
-        }
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.start:
-                statusTextView.setText(getString(R.string.starting_status_message));
+            case R.id.start_stop:
+                if (!isStart) {
+                    isStart = true;
+                    logTextView.setText(getString(R.string.starting_status_message));
 
-                StreetPassSettings streetPassSettings
-                        = new StreetPassSettings.Builder()
-                        .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
-                        .scanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                        .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
-                        .advertiseConnectable(true)
-                        .advertiseIncludeDeviceName(true)
-                        .advertiseIncludeTxPowerLevel(true)
-                        .serviceUuid(Constants.SERVICE_UUID)
-                        .sendDataMaxSize(true)
-                        .data(getString(R.string.test_message))
-                        .build();
+                    StreetPassSettings streetPassSettings
+                            = new StreetPassSettings.Builder()
+                            .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                            .scanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                            .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+                            .advertiseConnectable(true)
+                            .advertiseIncludeDeviceName(true)
+                            .advertiseIncludeTxPowerLevel(true)
+                            .serviceUuid(Constants.SERVICE_UUID)
+                            .sendDataMaxSize(true)
+                            .data(getString(R.string.test_message))
+                            .build();
 
-                streetPassBle.start(streetPassSettings);
-                break;
-            case R.id.stop:
-                streetPassBle.stop();
-                bleRecyclerAdapter.clear();
-                bleRecyclerAdapter.notifyDataSetChanged();
-                statusTextView.setText(getString(R.string.stop_status_message));
-                connectStatusTextView.setText(getString(R.string.close_server_status_message));
+                    streetPassBle.start(streetPassSettings);
+                } else {
+                    isStart = false;
+                    streetPassBle.stop();
+                }
                 break;
             default:
                 break;

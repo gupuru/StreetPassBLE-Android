@@ -7,21 +7,20 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
-import android.content.Intent;
 import android.os.ParcelUuid;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.parcelable.DeviceData;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.server.BLEServer;
 
 public class ScanBle extends ScanCallback {
 
     private Context context;
+    private OnScanBleListener onScanBleListener;
     private BluetoothGatt bluetoothGatt;
     private BluetoothAdapter bluetoothAdapter;
     private BLEServer bleServer;
@@ -32,6 +31,16 @@ public class ScanBle extends ScanCallback {
         this.bleServer = bleServer;
         this.bluetoothGatt = bluetoothGatt;
         this.bluetoothAdapter = bluetoothAdapter;
+    }
+
+    public interface OnScanBleListener {
+        void deviceDataInfo(DeviceData deviceData);
+
+        void error(Error error);
+    }
+
+    public void setOnScanBleListener(OnScanBleListener onScanBleListener) {
+        this.onScanBleListener = onScanBleListener;
     }
 
     @Override
@@ -61,11 +70,18 @@ public class ScanBle extends ScanCallback {
                     serviceData = new String(data, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
+                    return;
                 }
             }
 
-            DeviceData deviceData
-                    = new DeviceData(callbackType, bluetoothDevice.getAddress(), bluetoothDevice.getName(), uuid, distance, serviceData);
+            DeviceData deviceData = new DeviceData(
+                    callbackType,
+                    bluetoothDevice.getAddress(),
+                    bluetoothDevice.getName(),
+                    uuid,
+                    distance,
+                    serviceData
+            );
 
             if (deviceDataArrayList.isEmpty()) {
                 deviceDataArrayList.add(deviceData);
@@ -74,28 +90,19 @@ public class ScanBle extends ScanCallback {
                 bluetoothGatt = device.connectGatt(context, true, bleServer);
                 bluetoothGatt.connect();
 
-                Intent intent = new Intent();
-                intent.setAction(Constants.ACTION_SCAN);
-                intent.putExtra(Constants.SCAN_DATA, deviceData);
-                context.sendBroadcast(intent);
+                onScanBleListener.deviceDataInfo(deviceData);
+
             } else {
                 try {
                     for (DeviceData aDeviceData : deviceDataArrayList) {
                         if (!aDeviceData.getDeviceAddress().equals(deviceData.getDeviceAddress())) {
                             deviceDataArrayList.add(deviceData);
 
-
                             BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
                             bluetoothGatt = device.connectGatt(context, false, bleServer);
                             bluetoothGatt.connect();
 
-
-
-
-                            Intent intent = new Intent();
-                            intent.setAction(Constants.ACTION_SCAN);
-                            intent.putExtra(Constants.SCAN_DATA, deviceData);
-                            context.sendBroadcast(intent);
+                            onScanBleListener.deviceDataInfo(deviceData);
                         }
                     }
                 } catch (Exception e) {
@@ -131,15 +138,12 @@ public class ScanBle extends ScanCallback {
         }
 
         Error error = new Error(errorCode, errorMessage);
-
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_SCAN_ADV_ERROR);
-        intent.putExtra(Constants.ERROR_SCAN_ADV, error);
-        context.sendBroadcast(intent);
+        onScanBleListener.error(error);
     }
 
     /**
      * 推定距離を返す
+     *
      * @param scanRecord
      * @param result
      * @return

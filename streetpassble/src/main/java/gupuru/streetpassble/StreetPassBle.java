@@ -15,29 +15,25 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import gupuru.streetpassble.callback.AdvertiseBle;
 import gupuru.streetpassble.callback.ScanBle;
-import gupuru.streetpassble.parcelable.AdvertiseSuccess;
-import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.Error;
-import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.parcelable.*;
 import gupuru.streetpassble.server.BLEGattServer;
 import gupuru.streetpassble.server.BLEServer;
 import gupuru.streetpassble.util.StreetPassServiceUtil;
 
-public class StreetPassBle {
+public class StreetPassBle implements ScanBle.OnScanBleListener {
 
 
     private static final int DATA_MAX_SIZE = 512;
     private static final int DATA_MIN_SIZE = 20;
 
     private Context context;
-    private OnStreetPassListener onStreetPassListener;
-    private OnConnectDeviceListener onConnectDeviceListener;
     private StreetPassServiceUtil streetPassServiceUtil;
 
     private ScanBle scanBle;
@@ -53,33 +49,8 @@ public class StreetPassBle {
     private BLEGattServer bleGattServer;
     private BluetoothGatt bluetoothGatt;
 
-
     public StreetPassBle(Context context) {
         this.context = context;
-    }
-
-    public interface OnStreetPassListener {
-        void onReceivedData(DeviceData deviceData);
-
-        void onAdvertiseResult(AdvertiseSuccess advertiseSuccess);
-
-        void onStreetPassError(Error error);
-    }
-
-    public interface OnConnectDeviceListener {
-        void onConnectedDeviceData(DeviceData deviceData);
-
-        void onConnectedResult(boolean isConnected);
-
-        void canConnect(boolean result);
-    }
-
-    public void setOnStreetPassListener(OnStreetPassListener onStreetPassListener) {
-        this.onStreetPassListener = onStreetPassListener;
-    }
-
-    public void setOnConnectDeviceListener(OnConnectDeviceListener onConnectDeviceListener) {
-        this.onConnectDeviceListener = onConnectDeviceListener;
     }
 
     //region support
@@ -236,7 +207,7 @@ public class StreetPassBle {
      * BLE scan開始
      */
     private void scan() {
-        if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
+        if (streetPassSettings.getServiceUuid() != null) {
             List<ScanFilter> filters = new ArrayList<>();
             ScanFilter filter = new ScanFilter.Builder()
                     .setServiceUuid(streetPassSettings.getServiceUuid())
@@ -248,6 +219,7 @@ public class StreetPassBle {
                     .build();
 
             scanBle = new ScanBle(context, bleServer, bluetoothGatt, bluetoothAdapter);
+            scanBle.setOnScanBleListener(this);
 
             if (bluetoothLeScanner == null) {
                 bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -308,6 +280,15 @@ public class StreetPassBle {
     }
 
 
+    @Override
+    public void deviceDataInfo(DeviceData deviceData) {
+        Log.d("ここ", deviceData.getDeviceName());
+    }
+
+    @Override
+    public void error(gupuru.streetpassble.parcelable.Error error) {
+
+    }
 
 
 }
