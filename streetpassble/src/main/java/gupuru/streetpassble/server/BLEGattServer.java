@@ -3,12 +3,10 @@ package gupuru.streetpassble.server;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.util.Log;
 
 import gupuru.streetpassble.parcelable.TransferData;
 
@@ -18,13 +16,11 @@ import gupuru.streetpassble.parcelable.TransferData;
 public class BLEGattServer extends BluetoothGattServerCallback {
 
     private BluetoothGattServer bluetoothGattServer;
-    private BluetoothDevice connectDevice;
-    private BluetoothGattCharacteristic readCharacteristic;
     private String defaultSendResponseData = "";
     private OnBLEGattServerListener onBLEGattServerListener;
 
-    public BLEGattServer(BluetoothGattCharacteristic readCharacteristic) {
-        this.readCharacteristic = readCharacteristic;
+    public BLEGattServer(String defaultSendResponseData) {
+        this.defaultSendResponseData = defaultSendResponseData;
     }
 
     public interface OnBLEGattServerListener {
@@ -37,19 +33,6 @@ public class BLEGattServer extends BluetoothGattServerCallback {
 
     public void setOnBLEGattServerListener(OnBLEGattServerListener onBLEGattServerListener) {
         this.onBLEGattServerListener = onBLEGattServerListener;
-    }
-
-    /**
-     * 未接続の場合はnullを返す
-     *
-     * @return
-     */
-    public BluetoothDevice getConnectDevice() {
-        return connectDevice;
-    }
-
-    public void setDefaultSendResponseData(String defaultSendResponseData) {
-        this.defaultSendResponseData = defaultSendResponseData;
     }
 
     public void setBluetoothGattServer(BluetoothGattServer gattServer) {
@@ -70,7 +53,7 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                 if (onBLEGattServerListener != null) {
                     onBLEGattServerListener.onServiceAdded(true);
                 }
-            break;
+                break;
             default:
                 if (onBLEGattServerListener != null) {
                     onBLEGattServerListener.onServiceAdded(false);
@@ -91,11 +74,9 @@ public class BLEGattServer extends BluetoothGattServerCallback {
     public void onCharacteristicReadRequest(BluetoothDevice device, int requestId,
                                             int offset, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
-
-        Log.d("ここ", "onCharacteristicReadRequest");
-
         if (bluetoothGattServer != null) {
-            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, defaultSendResponseData.getBytes());
+            characteristic.setValue(defaultSendResponseData);
+            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
         }
     }
 
@@ -115,9 +96,6 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                                              BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded,
                                              int offset, byte[] value) {
         super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-
-        Log.d("ここ", "onCharacteristicWriteRequest");
-
         if (bluetoothGattServer != null && value != null) {
             characteristic.setValue(value);
             String message = characteristic.getStringValue(offset);
@@ -128,26 +106,6 @@ public class BLEGattServer extends BluetoothGattServerCallback {
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
         }
     }
-
-
-    @Override
-    public void onDescriptorWriteRequest(BluetoothDevice device, int requestId
-            , BluetoothGattDescriptor descriptor, boolean preparedWrite
-            , boolean responseNeeded, int offset, byte[] value) {
-        super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
-        Log.d("ここ", "onDescriptorWriteRequest");
-
-        bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
-
-    }
-
-    @Override
-    public void onDescriptorReadRequest(BluetoothDevice device, int requestId,
-                                        int offset, BluetoothGattDescriptor descriptor) {
-        super.onDescriptorReadRequest(device,requestId,offset,descriptor);
-        Log.d("ここ", "onDescriptorReadRequest");
-    }
-
 
     /**
      * 接続状態
@@ -162,25 +120,17 @@ public class BLEGattServer extends BluetoothGattServerCallback {
         boolean isConnect;
         switch (newState) {
             case BluetoothProfile.STATE_CONNECTED:
-                connectDevice = device;
                 isConnect = true;
-
-                Log.d("ここ", "onConnectionStateChange");
-                readCharacteristic.setValue("HI");
-                bluetoothGattServer.notifyCharacteristicChanged(device, readCharacteristic, false);
-
                 break;
             case BluetoothProfile.STATE_DISCONNECTED:
-                connectDevice = null;
                 isConnect = false;
                 break;
             default:
-                connectDevice = null;
                 isConnect = false;
                 break;
         }
         if (onBLEGattServerListener != null) {
-            onBLEGattServerListener.onConnectionStateChange(isConnect, connectDevice);
+            onBLEGattServerListener.onConnectionStateChange(isConnect, device);
         }
     }
 

@@ -17,6 +17,9 @@ import gupuru.streetpassble.parcelable.DeviceData;
 import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.server.BLEServer;
 
+/**
+ * BLEのスキャン処理 ScanCallback
+ */
 public class ScanBle extends ScanCallback {
 
     private Context context;
@@ -43,18 +46,63 @@ public class ScanBle extends ScanCallback {
         this.onScanBleListener = onScanBleListener;
     }
 
+    //region BluetoothLeScanner
+
     @Override
     public void onScanResult(int callbackType, ScanResult result) {
         super.onScanResult(callbackType, result);
-        if (result == null) {
-            return;
+        if (result != null) {
+            analyzeScanResult(callbackType, result);
         }
+    }
+
+    @Override
+    public void onBatchScanResults(List<ScanResult> results) {
+        super.onBatchScanResults(results);
+    }
+
+    @Override
+    public void onScanFailed(int errorCode) {
+        super.onScanFailed(errorCode);
+        String errorMessage = "";
+        switch (errorCode) {
+            case SCAN_FAILED_ALREADY_STARTED:
+                errorMessage = "SCAN_FAILED_ALREADY_STARTED/既にBLEスキャンを実行中です";
+                break;
+            case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
+                errorMessage = "SCAN_FAILED_APPLICATION_REGISTRATION_FAILED/BLEスキャンを開始できませんでした";
+                break;
+            case SCAN_FAILED_FEATURE_UNSUPPORTED:
+                errorMessage = "SCAN_FAILED_FEATURE_UNSUPPORTED/BLEの検索をサポートしていません。";
+                break;
+            case SCAN_FAILED_INTERNAL_ERROR:
+                errorMessage = "SCAN_FAILED_INTERNAL_ERROR/内部エラーが発生しました";
+                break;
+        }
+        //error callback
+        Error error = new Error(errorCode, errorMessage);
+        if (onScanBleListener != null) {
+            onScanBleListener.error(error);
+        }
+    }
+
+    //endregion
+
+    //region Sub Methods
+
+    /**
+     * scanした結果を解析する
+     *
+     * @param callbackType
+     * @param result
+     */
+    private void analyzeScanResult(int callbackType, ScanResult result) {
         BluetoothDevice bluetoothDevice = result.getDevice();
         ScanRecord scanRecord = result.getScanRecord();
         if (scanRecord != null) {
             //推定距離
             double distance = getDistance(scanRecord, result);
-
+            //uuid, ServiceData取得
             String uuid = "";
             byte[] data = null;
             String serviceData = "";
@@ -73,7 +121,7 @@ public class ScanBle extends ScanCallback {
                     return;
                 }
             }
-
+            //advertisingしている端末の情報
             DeviceData deviceData = new DeviceData(
                     callbackType,
                     bluetoothDevice.getAddress(),
@@ -82,63 +130,56 @@ public class ScanBle extends ScanCallback {
                     distance,
                     serviceData
             );
+            //端末に接続するか
+            if (isConnectedDevice(deviceData)) {
+                //接続
+                connectDevice(bluetoothDevice.getAddress(), deviceData);
+            }
+        }
+    }
 
+    /**
+     * 端末に接続できるか
+     *
+     * @param deviceData
+     * @return
+     */
+    private boolean isConnectedDevice(DeviceData deviceData) {
+        try {
             if (deviceDataArrayList.isEmpty()) {
                 deviceDataArrayList.add(deviceData);
-
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
-                bluetoothGatt = device.connectGatt(context, true, bleServer);
-                bluetoothGatt.connect();
-
-                onScanBleListener.deviceDataInfo(deviceData);
-
+                return true;
             } else {
-                try {
-                    for (DeviceData aDeviceData : deviceDataArrayList) {
-                        if (!aDeviceData.getDeviceAddress().equals(deviceData.getDeviceAddress())) {
-                            deviceDataArrayList.add(deviceData);
-
-                            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
-                            bluetoothGatt = device.connectGatt(context, false, bleServer);
-                            bluetoothGatt.connect();
-
-                            onScanBleListener.deviceDataInfo(deviceData);
-                        }
+                //接続したことない端末のみ接続する
+                for (int i = 0; i < deviceDataArrayList.size(); i++) {
+                    if (!deviceDataArrayList.get(i).getDeviceAddress().equals(deviceData.getDeviceAddress())) {
+                        deviceDataArrayList.add(deviceData);
+                        return true;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
-
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
-    @Override
-    public void onBatchScanResults(List<ScanResult> results) {
-        super.onBatchScanResults(results);
-    }
-
-    @Override
-    public void onScanFailed(int errorCode) {
-        super.onScanFailed(errorCode);
-        String errorMessage = "";
-        switch (errorCode) {
-            case SCAN_FAILED_ALREADY_STARTED:
-                errorMessage = "既にBLEスキャンを実行中です";
-                break;
-            case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
-                errorMessage = "BLEスキャンを開始できませんでした";
-                break;
-            case SCAN_FAILED_FEATURE_UNSUPPORTED:
-                errorMessage = "BLEの検索をサポートしていません。";
-                break;
-            case SCAN_FAILED_INTERNAL_ERROR:
-                errorMessage = "内部エラーが発生しました";
-                break;
+    /**
+     * 端末接続
+     *
+     * @param address
+     * @param deviceData
+     */
+    private void connectDevice(String address, DeviceData deviceData) {
+        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
+        bluetoothGatt = device.connectGatt(context, false, bleServer);
+        //接続
+        bluetoothGatt.connect();
+        //callback
+        if (onScanBleListener != null) {
+            onScanBleListener.deviceDataInfo(deviceData);
         }
-
-        Error error = new Error(errorCode, errorMessage);
-        onScanBleListener.error(error);
     }
 
     /**
@@ -151,5 +192,7 @@ public class ScanBle extends ScanCallback {
     private double getDistance(ScanRecord scanRecord, ScanResult result) {
         return scanRecord.getTxPowerLevel() - result.getRssi();
     }
+
+    //endregion
 
 }

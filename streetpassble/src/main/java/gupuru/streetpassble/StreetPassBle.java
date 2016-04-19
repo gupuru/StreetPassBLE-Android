@@ -3,7 +3,6 @@ package gupuru.streetpassble;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
@@ -23,11 +22,12 @@ import java.util.List;
 import gupuru.streetpassble.callback.AdvertiseBle;
 import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.parcelable.*;
+import gupuru.streetpassble.parcelable.Error;
 import gupuru.streetpassble.server.BLEGattServer;
 import gupuru.streetpassble.server.BLEServer;
 import gupuru.streetpassble.util.StreetPassServiceUtil;
 
-public class StreetPassBle implements ScanBle.OnScanBleListener {
+public class StreetPassBle implements ScanBle.OnScanBleListener, AdvertiseBle.OnAdvertiseBleListener, BLEServer.OnBLEServerListener {
 
 
     private static final int DATA_MAX_SIZE = 512;
@@ -108,7 +108,6 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
      * すれ違い通信開始
      *
      * @param streetPassSettings
-     *
      */
     public void start(StreetPassSettings streetPassSettings) {
         this.streetPassSettings = streetPassSettings;
@@ -158,6 +157,8 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
 
         if (streetPassSettings.isAdvertiseConnectable()) {
             bleServer = new BLEServer(streetPassSettings);
+            bleServer.setOnBLEServerListener(this);
+            //gatt server開く
             openGattServer();
         }
         //BLEの送信に対応しているか
@@ -165,9 +166,6 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
             //対応->送受信
             scan();
             advertising();
-        } else {
-            //非対応->受信のみ
-            scan();
         }
     }
 
@@ -176,7 +174,7 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
         BluetoothGattService service = new BluetoothGattService(
                 streetPassSettings.getServiceUuid().getUuid(),
                 BluetoothGattService.SERVICE_TYPE_PRIMARY);
-
+        //readCharacteristic登録
         BluetoothGattCharacteristic readCharacteristic = new BluetoothGattCharacteristic(
                 streetPassSettings.getReadCharacteristicUuid().getUuid(),
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY |
@@ -186,19 +184,23 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
                         BluetoothGattCharacteristic.PERMISSION_WRITE |
                         BluetoothGattCharacteristic.PROPERTY_NOTIFY
         );
-
-        BluetoothGattDescriptor dataDescriptor = new BluetoothGattDescriptor(
-                streetPassSettings.getReadCharacteristicUuid().getUuid()
-                , BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
-        readCharacteristic.addDescriptor(dataDescriptor);
+        //writeCharacteristic登録
+        BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
+                streetPassSettings.getWriteCharacteristicUuid().getUuid(),
+                BluetoothGattCharacteristic.PROPERTY_NOTIFY |
+                        BluetoothGattCharacteristic.PROPERTY_READ |
+                        BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_READ |
+                        BluetoothGattCharacteristic.PERMISSION_WRITE |
+                        BluetoothGattCharacteristic.PROPERTY_NOTIFY
+        );
 
         service.addCharacteristic(readCharacteristic);
+        service.addCharacteristic(writeCharacteristic);
 
         bleGattServer = new BLEGattServer(readCharacteristic);
         gattServer = bluetoothManager.openGattServer(context, bleGattServer);
         bleGattServer.setBluetoothGattServer(gattServer);
-
-        bleGattServer.setDefaultSendResponseData("neko");
 
         gattServer.addService(service);
     }
@@ -207,13 +209,16 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
      * BLE scan開始
      */
     private void scan() {
-        if (streetPassSettings.getServiceUuid() != null) {
+        if (streetPassSettings != null && streetPassSettings.getServiceUuid() != null) {
+
+            //uuidのフィルター設定
             List<ScanFilter> filters = new ArrayList<>();
             ScanFilter filter = new ScanFilter.Builder()
                     .setServiceUuid(streetPassSettings.getServiceUuid())
                     .build();
             filters.add(filter);
 
+            //scan頻度の設定
             ScanSettings settings = new ScanSettings.Builder()
                     .setScanMode(streetPassSettings.getScanMode())
                     .build();
@@ -224,21 +229,21 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
             if (bluetoothLeScanner == null) {
                 bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
             }
-
+            //scan開始
             bluetoothLeScanner.startScan(filters, settings, scanBle);
         }
     }
 
     private void advertising() {
-        if (streetPassSettings.getServiceUuid() != null && !streetPassSettings.getServiceUuid().equals("")) {
-            // 設定
+        if (streetPassSettings != null && streetPassSettings.getServiceUuid() != null) {
+            // Advertising設定
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
                     .setAdvertiseMode(streetPassSettings.getAdvertiseMode())
                     .setTxPowerLevel(streetPassSettings.getTxPowerLevel())
                     .setTimeout(streetPassSettings.getTimeOut())
                     .setConnectable(streetPassSettings.isAdvertiseConnectable())
                     .build();
-
+            //送信データのトリム
             String serviceData = streetPassSettings.getData();
             if (serviceData == null) {
                 serviceData = "";
@@ -257,7 +262,9 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
                     .build();
 
             advertiseBle = new AdvertiseBle(context);
+            advertiseBle.setOnAdvertiseBleListener(this);
 
+            //アドバタイジング開始
             bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseBle);
         }
     }
@@ -279,10 +286,11 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
         bleGattServer = null;
     }
 
+    //region scan
 
     @Override
     public void deviceDataInfo(DeviceData deviceData) {
-        Log.d("ここ", deviceData.getDeviceName());
+        Log.d("ここ", "deviceDataInfo:" + deviceData.getDeviceName());
     }
 
     @Override
@@ -290,5 +298,40 @@ public class StreetPassBle implements ScanBle.OnScanBleListener {
 
     }
 
+    //endregion
+
+    //region Advertise
+
+    @Override
+    public void onAdvertiseBleSuccess(AdvertiseSuccess advertiseSuccess) {
+
+    }
+
+    @Override
+    public void onAdvertiseBleError(gupuru.streetpassble.parcelable.Error error) {
+
+    }
+
+    //endregion
+
+    @Override
+    public void onBLEServerRead(TransferData data) {
+        bleServer.writeData("{\"id\":240007,\"name\":\"ゆきの\"}", 512);
+    }
+
+    @Override
+    public void onBLEServerWrite(TransferData data) {
+
+    }
+
+    @Override
+    public void onConnected(boolean result) {
+
+    }
+
+    @Override
+    public void onBLEServerError(Error error) {
+
+    }
 
 }

@@ -36,6 +36,7 @@ public class StreetPassServiceUtil {
 
     /**
      * バイト数が20バイトより上かどうか 20バイトより上ならtrueを返す
+     *
      * @param str
      * @return
      */
@@ -45,6 +46,7 @@ public class StreetPassServiceUtil {
 
     /**
      * 文字のバイト数を減らす
+     *
      * @param str
      * @param len
      * @param charset
