@@ -1,1 +1,1 @@
-include ':app', ':streetpassble'
+include ':sample', ':streetpassble'

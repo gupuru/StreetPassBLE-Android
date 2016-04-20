@@ -21,6 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
+        android:hint="@string/edit_text_hint"
         android:inputType="text" />
 
     <Button
@@ -29,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
-        android:text="@string/start" />
+        android:text="@string/start_button_text" />
 
     <TextView
         android:id="@+id/log_text_view"
@@ -37,4 +38,5 @@
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
         android:text="@string/log_text_view_status" />
+
 </LinearLayout>
