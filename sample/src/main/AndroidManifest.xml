@@ -16,7 +16,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activity.MainActivity">
+        <activity android:name=".activity.MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -24,12 +25,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name="gupuru.streetpassble.service.StreetPassService"
-            android:enabled="true"
-            android:exported="true" />
-
-        <activity android:name=".activity.ChatActivity"></activity>
     </application>
 
 </manifest>

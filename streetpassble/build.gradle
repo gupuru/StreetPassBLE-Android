@@ -1,18 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
-
-def repo = new File(rootDir, "repository")
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository url: "file://${repo.absolutePath}"
-            pom.version = '0.0.16'
-            pom.groupId = 'gupuru'
-            pom.artifactId = 'streetpassble'
-        }
-    }
-}
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 23
@@ -22,7 +9,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
-        versionName "0.0.16"
+        versionName "1.0"
     }
     buildTypes {
         release {
@@ -30,6 +17,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+publish {
+    userOrg = 'gupuru'
+    groupId = 'com.gupuru.streetpass'
+    artifactId = 'streetpass'
+    publishVersion = '0.1.0'
+    desc = 'street pass communication'
+    website = 'https://github.com/gupuru/StreetPassBLE'
 }
 
 dependencies {

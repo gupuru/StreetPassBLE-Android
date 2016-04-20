@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">StreetPass</string>
+    <string name="menu_version">Version</string>
+    <string name="menu_contact">Contact</string>
+    <string name="version_title">Version</string>
+    <string name="contact_title">Contact</string>
+    <string name="contact_message">email: origami.magic789@gmail.com\n\ntwitter: @gupuru</string>
+    <string name="log_text_view_status">Status here</string>
+    <string name="edit_text_hint">Input here</string>
+    <string name="start_button_text">START</string>
+    <string name="stop_button_text">STOP</string>
+    <string name="incompatible_street_pass">This smart phone is incompatible StreetPass.</string>
+    <string name="alert_positive_button">OK</string>
+    <string name="street_pass_status">%1$s\n%2$s</string>
+    <string name="caution_title">Caution</string>
+    <string name="caution_message">Please input data.</string>
+
+</resources>

@@ -16,11 +16,19 @@ import gupuru.streetpassble.parcelable.TransferData;
 public class BLEGattServer extends BluetoothGattServerCallback {
 
     private BluetoothGattServer bluetoothGattServer;
-    private BluetoothDevice connectDevice;
     private String defaultSendResponseData = "";
     private OnBLEGattServerListener onBLEGattServerListener;
 
-    public BLEGattServer() {
+    public BLEGattServer(String defaultSendResponseData) {
+        this.defaultSendResponseData = defaultSendResponseData;
+    }
+
+    public void setOnBLEGattServerListener(OnBLEGattServerListener onBLEGattServerListener) {
+        this.onBLEGattServerListener = onBLEGattServerListener;
+    }
+
+    public void setBluetoothGattServer(BluetoothGattServer bluetoothGattServer) {
+        this.bluetoothGattServer = bluetoothGattServer;
     }
 
     public interface OnBLEGattServerListener {
@@ -29,27 +37,6 @@ public class BLEGattServer extends BluetoothGattServerCallback {
         void onCharacteristicWriteRequest(TransferData data);
 
         void onConnectionStateChange(boolean isConnect, BluetoothDevice device);
-    }
-
-    public void setOnBLEGattServerListener(OnBLEGattServerListener onBLEGattServerListener) {
-        this.onBLEGattServerListener = onBLEGattServerListener;
-    }
-
-    /**
-     * 未接続の場合はnullを返す
-     *
-     * @return
-     */
-    public BluetoothDevice getConnectDevice() {
-        return connectDevice;
-    }
-
-    public void setDefaultSendResponseData(String defaultSendResponseData) {
-        this.defaultSendResponseData = defaultSendResponseData;
-    }
-
-    public void setBluetoothGattServer(BluetoothGattServer gattServer) {
-        this.bluetoothGattServer = gattServer;
     }
 
     /**
@@ -88,7 +75,8 @@ public class BLEGattServer extends BluetoothGattServerCallback {
                                             int offset, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
         if (bluetoothGattServer != null) {
-            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, defaultSendResponseData.getBytes());
+            characteristic.setValue(defaultSendResponseData);
+            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
         }
     }
 
@@ -132,20 +120,17 @@ public class BLEGattServer extends BluetoothGattServerCallback {
         boolean isConnect;
         switch (newState) {
             case BluetoothProfile.STATE_CONNECTED:
-                connectDevice = device;
                 isConnect = true;
                 break;
             case BluetoothProfile.STATE_DISCONNECTED:
-                connectDevice = null;
                 isConnect = false;
                 break;
             default:
-                connectDevice = null;
                 isConnect = false;
                 break;
         }
         if (onBLEGattServerListener != null) {
-            onBLEGattServerListener.onConnectionStateChange(isConnect, connectDevice);
+            onBLEGattServerListener.onConnectionStateChange(isConnect, device);
         }
     }
 

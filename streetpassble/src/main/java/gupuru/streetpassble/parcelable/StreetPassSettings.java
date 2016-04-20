@@ -1,16 +1,19 @@
 package gupuru.streetpassble.parcelable;
 
 import android.os.Parcel;
+import android.os.ParcelUuid;
 import android.os.Parcelable;
+
+import java.util.UUID;
 
 import gupuru.streetpassble.constants.Settings;
 
 public class StreetPassSettings implements Parcelable {
 
     protected String serviceUuid;
-    protected String characteristicUuid;
+    protected String writeCharacteristicUuid;
+    protected String readCharacteristicUuid;
     protected String data;
-    protected String defaultResponseData;
     protected int scanMode;
     protected int advertiseMode;
     protected int txPowerLevel;
@@ -22,9 +25,9 @@ public class StreetPassSettings implements Parcelable {
 
     public static class Builder {
         protected String serviceUuid = Settings.SERVICE_UUID;
-        protected String characteristicUuid = Settings.CHARACTERISTIC_UUID;
+        protected String writeCharacteristicUuid = Settings.WRITE_CHARACTERISTIC_UUID;
+        protected String readCharacteristicUuid = Settings.READ_CHARACTERISTIC_UUID;
         protected String data = "";
-        protected String defaultResponseData = "";
         protected int scanMode = Settings.SCAN__MODE;
         protected int advertiseMode = Settings.ADVERTISE_MODE;
         protected int txPowerLevel = Settings.TX_POWER_LEVEL;
@@ -35,9 +38,9 @@ public class StreetPassSettings implements Parcelable {
         protected boolean sendDataMaxSize = Settings.SEND_DATA_MAX_SIZE;
 
         public Builder serviceUuid(String serviceUuid) { this.serviceUuid = serviceUuid; return this; }
-        public Builder characteristicUuid(String characteristicUuid) { this.characteristicUuid = characteristicUuid; return this; }
+        public Builder writeCharacteristicUuid(String writeCharacteristicUuid) { this.writeCharacteristicUuid = writeCharacteristicUuid; return this; }
+        public Builder readCharacteristicUuid(String readCharacteristicUuid) { this.readCharacteristicUuid = readCharacteristicUuid; return this; }
         public Builder data(String data) { this.data = data; return this; }
-        public Builder defaultResponseData(String defaultResponseData) { this.defaultResponseData = defaultResponseData; return this; }
         public Builder scanMode(int scanMode) { this.scanMode = scanMode; return this; }
         public Builder advertiseMode(int advertiseMode) { this.advertiseMode = advertiseMode; return this; }
         public Builder txPowerLevel(int txPowerLevel) { this.txPowerLevel = txPowerLevel; return this; }
@@ -60,9 +63,9 @@ public class StreetPassSettings implements Parcelable {
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeString(serviceUuid);
-        out.writeString(characteristicUuid);
+        out.writeString(writeCharacteristicUuid);
+        out.writeString(readCharacteristicUuid);
         out.writeString(data);
-        out.writeString(defaultResponseData);
         out.writeInt(scanMode);
         out.writeInt(advertiseMode);
         out.writeInt(txPowerLevel);
@@ -86,9 +89,9 @@ public class StreetPassSettings implements Parcelable {
 
     private StreetPassSettings(Builder builder) {
         this.serviceUuid = builder.serviceUuid;
-        this.characteristicUuid = builder.characteristicUuid;
+        this.writeCharacteristicUuid = builder.writeCharacteristicUuid;
+        this.readCharacteristicUuid = builder.readCharacteristicUuid;
         this.data = builder.data;
-        this.defaultResponseData = builder.defaultResponseData;
         this.scanMode = builder.scanMode;
         this.advertiseMode = builder.advertiseMode;
         this.txPowerLevel = builder.txPowerLevel;
@@ -101,9 +104,9 @@ public class StreetPassSettings implements Parcelable {
 
     private StreetPassSettings(Parcel in) {
         serviceUuid = in.readString();
-        characteristicUuid = in.readString();
+        writeCharacteristicUuid = in.readString();
+        readCharacteristicUuid = in.readString();
         data = in.readString();
-        defaultResponseData = in.readString();
         scanMode = in.readInt();
         advertiseMode = in.readInt();
         txPowerLevel = in.readInt();
@@ -118,20 +121,20 @@ public class StreetPassSettings implements Parcelable {
         return sendDataMaxSize;
     }
 
-    public String getDefaultResponseData() {
-        return defaultResponseData;
-    }
-
     public String getData() {
         return data;
     }
 
-    public String getServiceUuid() {
-        return serviceUuid;
+    public ParcelUuid getServiceUuid() {
+        return new ParcelUuid(UUID.fromString(serviceUuid));
     }
 
-    public String getCharacteristicUuid() {
-        return characteristicUuid;
+    public ParcelUuid getReadCharacteristicUuid() {
+        return new ParcelUuid(UUID.fromString(readCharacteristicUuid));
+    }
+
+    public ParcelUuid getWriteCharacteristicUuid() {
+        return new ParcelUuid(UUID.fromString(writeCharacteristicUuid));
     }
 
     public int getAdvertiseMode() {
