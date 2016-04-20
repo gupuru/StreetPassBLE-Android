@@ -23,20 +23,20 @@ public class BLEGattServer extends BluetoothGattServerCallback {
         this.defaultSendResponseData = defaultSendResponseData;
     }
 
+    public void setOnBLEGattServerListener(OnBLEGattServerListener onBLEGattServerListener) {
+        this.onBLEGattServerListener = onBLEGattServerListener;
+    }
+
+    public void setBluetoothGattServer(BluetoothGattServer bluetoothGattServer) {
+        this.bluetoothGattServer = bluetoothGattServer;
+    }
+
     public interface OnBLEGattServerListener {
         void onServiceAdded(boolean result);
 
         void onCharacteristicWriteRequest(TransferData data);
 
         void onConnectionStateChange(boolean isConnect, BluetoothDevice device);
-    }
-
-    public void setOnBLEGattServerListener(OnBLEGattServerListener onBLEGattServerListener) {
-        this.onBLEGattServerListener = onBLEGattServerListener;
-    }
-
-    public void setBluetoothGattServer(BluetoothGattServer gattServer) {
-        this.bluetoothGattServer = gattServer;
     }
 
     /**

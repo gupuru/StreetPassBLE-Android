@@ -24,15 +24,13 @@ public class ScanBle extends ScanCallback {
 
     private Context context;
     private OnScanBleListener onScanBleListener;
-    private BluetoothGatt bluetoothGatt;
     private BluetoothAdapter bluetoothAdapter;
     private BLEServer bleServer;
     private ArrayList<DeviceData> deviceDataArrayList = new ArrayList<>();
 
-    public ScanBle(Context context, BLEServer bleServer, BluetoothGatt bluetoothGatt, BluetoothAdapter bluetoothAdapter) {
+    public ScanBle(Context context, BLEServer bleServer, BluetoothAdapter bluetoothAdapter) {
         this.context = context;
         this.bleServer = bleServer;
-        this.bluetoothGatt = bluetoothGatt;
         this.bluetoothAdapter = bluetoothAdapter;
     }
 
@@ -173,7 +171,7 @@ public class ScanBle extends ScanCallback {
      */
     private void connectDevice(String address, DeviceData deviceData) {
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
-        bluetoothGatt = device.connectGatt(context, false, bleServer);
+        BluetoothGatt bluetoothGatt = device.connectGatt(context, false, bleServer);
         //接続
         bluetoothGatt.connect();
         //callback

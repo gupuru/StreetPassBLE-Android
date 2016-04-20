@@ -10,6 +10,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,9 +20,9 @@ import android.widget.TextView;
 import gupuru.streetpass.R;
 import gupuru.streetpass.constans.Constants;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.parcelable.*;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, StreetPassBle.OnStreetPassBleListener {
 
     private StreetPassBle streetPassBle;
     private TextView logTextView;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         logTextView = (TextView) findViewById(R.id.log_text_view);
 
         streetPassBle = new StreetPassBle(MainActivity.this);
+        streetPassBle.setOnStreetPassBleListener(this);
 
         //BLE対応端末か
         if (streetPassBle.isBle()) {
@@ -144,6 +146,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             default:
                 break;
         }
+    }
+
+    @Override
+    public void nearByDevices(DeviceData deviceData) {
+        Log.d("ここ", deviceData.getDeviceName());
+    }
+
+    @Override
+    public void error(gupuru.streetpassble.parcelable.Error error) {
+        Log.d("ここ", error.getErrorMessage());
+    }
+
+    @Override
+    public void receivedData(TransferData data) {
+        Log.d("ここ", data.getMessage());
     }
 
 }

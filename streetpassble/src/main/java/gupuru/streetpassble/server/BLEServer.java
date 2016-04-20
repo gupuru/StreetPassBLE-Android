@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.util.Log;
 
 import java.util.List;
 import java.util.UUID;
@@ -101,7 +100,6 @@ public class BLEServer extends BluetoothGattCallback {
 
         if (characteristic != null && gatt != null) {
             String data = characteristic.getStringValue(0);
-            Log.d("ここ", "onCharacteristicRead " + data);
             TransferData transferData = new TransferData(gatt.getDevice().getAddress(), data);
             onBLEServerListener.onBLEServerRead(transferData);
         }
@@ -142,7 +140,17 @@ public class BLEServer extends BluetoothGattCallback {
     //region Sub Methods
 
     /**
+     * 接続を切る
+     */
+    public void disConnect() {
+        if (bluetoothGatt != null) {
+            bluetoothGatt.disconnect();
+        }
+    }
+
+    /**
      * エラー処理の結果
+     *
      * @param message
      * @return
      */
@@ -169,6 +177,7 @@ public class BLEServer extends BluetoothGattCallback {
 
     /**
      * 送信
+     *
      * @param message
      * @param dataSize
      */

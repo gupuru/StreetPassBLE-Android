@@ -2,7 +2,6 @@ package gupuru.streetpassble.callback;
 
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseSettings;
-import android.content.Context;
 
 import gupuru.streetpassble.parcelable.AdvertiseSuccess;
 import gupuru.streetpassble.parcelable.Error;
@@ -12,11 +11,10 @@ import gupuru.streetpassble.parcelable.Error;
  */
 public class AdvertiseBle extends AdvertiseCallback {
 
-    private Context context;
     private OnAdvertiseBleListener onAdvertiseBleListener;
 
-    public AdvertiseBle(Context context) {
-        this.context = context;
+    public AdvertiseBle() {
+
     }
 
     public void setOnAdvertiseBleListener(OnAdvertiseBleListener onAdvertiseBleListener) {
