@@ -24,7 +24,7 @@ publish {
     groupId = 'com.gupuru.streetpass'
     artifactId = 'streetpass'
     publishVersion = '0.1.0'
-    desc = 'street pass communication'
+    desc = 'street pass communication for android'
     website = 'https://github.com/gupuru/StreetPassBLE'
 }
 
