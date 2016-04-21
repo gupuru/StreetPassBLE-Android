@@ -5,7 +5,7 @@ import android.os.Parcelable;
 
 public class TransferData implements Parcelable {
 
-    protected String message;
+    protected String data;
     protected String deviceAddress;
 
     @Override
@@ -15,7 +15,7 @@ public class TransferData implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel out, int flags) {
-        out.writeString(message);
+        out.writeString(data);
         out.writeString(deviceAddress);
     }
 
@@ -30,26 +30,26 @@ public class TransferData implements Parcelable {
         }
     };
 
-    public TransferData(String deviceAddress, String message) {
-        this.message = message;
+    public TransferData(String deviceAddress, String data) {
+        this.data = data;
         this.deviceAddress = deviceAddress;
     }
 
     private TransferData(Parcel in) {
-        message = in.readString();
+        data = in.readString();
         deviceAddress = in.readString();
     }
 
-    public String getMessage() {
-        return message;
+    public String getData() {
+        return data;
     }
 
     public String getDeviceAddress() {
         return deviceAddress;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setData(String message) {
+        this.data = data;
     }
 
     public void setDeviceAddress(String deviceAddress) {

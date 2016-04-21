@@ -110,6 +110,14 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     }
 
     /**
+     * すれ違い通信開始
+     */
+    public void start() {
+        this.streetPassSettings = new StreetPassSettings.Builder().build();
+        initStreetPass();
+    }
+
+    /**
      * BLE停止
      */
     public void stop() {
@@ -129,20 +137,19 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
      * scanとadvertising初期化
      */
     private void initStreetPass() {
-        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        //BLEの送信に対応しているか
+        if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
+            bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
-        bluetoothAdapter = bluetoothManager.getAdapter();
-        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
-        bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+            bluetoothAdapter = bluetoothManager.getAdapter();
+            bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+            bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
 
-        if (streetPassSettings.isAdvertiseConnectable()) {
             bleServer = new BLEServer(streetPassSettings);
             bleServer.setOnBLEServerListener(this);
             //gatt server開く
             openGattServer();
-        }
-        //BLEの送信に対応しているか
-        if (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported()) {
+
             //対応->送受信
             scan();
             advertising();
@@ -226,8 +233,8 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
                     .setAdvertiseMode(streetPassSettings.getAdvertiseMode())
                     .setTxPowerLevel(streetPassSettings.getTxPowerLevel())
-                    .setTimeout(streetPassSettings.getTimeOut())
-                    .setConnectable(streetPassSettings.isAdvertiseConnectable())
+                    .setTimeout(0)
+                    .setConnectable(true)
                     .build();
             // アドバタイジングデータ
             AdvertiseData advertiseData = new AdvertiseData.Builder()

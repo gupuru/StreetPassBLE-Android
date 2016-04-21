@@ -139,11 +139,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                                 .scanMode(ScanSettings.SCAN_MODE_LOW_POWER)
                                 .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
-                                .advertiseConnectable(true)
                                 .advertiseIncludeDeviceName(true)
                                 .advertiseIncludeTxPowerLevel(true)
                                 .serviceUuid(Constants.SERVICE_UUID)
-                                .sendDataMaxSize(true)
                                 .data(sendData)
                                 .build();
 
@@ -176,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("SetTextI18n")
     @Override
     public void receivedData(final TransferData data) {
-        setStatusText(data.getMessage());
+        setStatusText(data.getData());
     }
 
     /**
