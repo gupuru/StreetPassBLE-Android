@@ -22,7 +22,7 @@ import gupuru.streetpassble.callback.AdvertiseBle;
 import gupuru.streetpassble.callback.ScanBle;
 import gupuru.streetpassble.parcelable.AdvertiseSuccess;
 import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.StreetPassError;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 import gupuru.streetpassble.parcelable.TransferData;
 import gupuru.streetpassble.server.BLEGattServer;
@@ -66,7 +66,7 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     public interface OnStreetPassBleListener {
         void nearByDevices(DeviceData deviceData);
 
-        void error(gupuru.streetpassble.parcelable.Error error);
+        void error(StreetPassError streetPassError);
 
         void receivedData(TransferData data);
     }
@@ -75,11 +75,11 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
 
         void onScanCallbackDeviceDataInfo(DeviceData deviceData);
 
-        void onScanCallbackError(gupuru.streetpassble.parcelable.Error error);
+        void onScanCallbackError(StreetPassError streetPassError);
 
         void onAdvertiseBleSuccess(AdvertiseSuccess advertiseSuccess);
 
-        void onAdvertiseBleError(gupuru.streetpassble.parcelable.Error error);
+        void onAdvertiseBleError(StreetPassError streetPassError);
 
         void onBLEServerRead(TransferData data);
 
@@ -87,7 +87,7 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
 
         void onBLEServerConnected(boolean result);
 
-        void onBLEServerError(Error error);
+        void onBLEServerError(StreetPassError streetPassError);
 
         void onBLEGattServerServiceAdded(boolean result);
 
@@ -288,12 +288,12 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     }
 
     @Override
-    public void error(gupuru.streetpassble.parcelable.Error error) {
+    public void error(StreetPassError streetPassError) {
         if (onStreetPassBleListener != null) {
-            onStreetPassBleListener.error(error);
+            onStreetPassBleListener.error(streetPassError);
         }
         if (onStreetPassBleServerListener != null) {
-            onStreetPassBleServerListener.onScanCallbackError(error);
+            onStreetPassBleServerListener.onScanCallbackError(streetPassError);
         }
 
     }
@@ -310,12 +310,12 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     }
 
     @Override
-    public void onAdvertiseBleError(gupuru.streetpassble.parcelable.Error error) {
+    public void onAdvertiseBleError(StreetPassError streetPassError) {
         if (onStreetPassBleListener != null) {
-            onStreetPassBleListener.error(error);
+            onStreetPassBleListener.error(streetPassError);
         }
         if (onStreetPassBleServerListener != null) {
-            onStreetPassBleServerListener.onAdvertiseBleError(error);
+            onStreetPassBleServerListener.onAdvertiseBleError(streetPassError);
         }
     }
 
@@ -351,12 +351,12 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     }
 
     @Override
-    public void onBLEServerError(Error error) {
+    public void onBLEServerError(StreetPassError streetPassError) {
         if (onStreetPassBleListener != null) {
-            onStreetPassBleListener.error(error);
+            onStreetPassBleListener.error(streetPassError);
         }
         if (onStreetPassBleServerListener != null) {
-            onStreetPassBleServerListener.onBLEServerError(error);
+            onStreetPassBleServerListener.onBLEServerError(streetPassError);
         }
     }
 

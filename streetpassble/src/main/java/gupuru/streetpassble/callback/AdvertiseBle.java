@@ -4,7 +4,7 @@ import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseSettings;
 
 import gupuru.streetpassble.parcelable.AdvertiseSuccess;
-import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.StreetPassError;
 
 /**
  * Advertisingの結果 AdvertiseCallback
@@ -24,7 +24,7 @@ public class AdvertiseBle extends AdvertiseCallback {
     public interface OnAdvertiseBleListener {
         void onAdvertiseBleSuccess(AdvertiseSuccess advertiseSuccess);
 
-        void onAdvertiseBleError(Error error);
+        void onAdvertiseBleError(StreetPassError streetPassError);
     }
 
     @Override
@@ -61,9 +61,9 @@ public class AdvertiseBle extends AdvertiseCallback {
                 errorMessage = "ADVERTISE_FAILED_TOO_MANY_ADVERTISERS/利用可能なAdvertiseのインスタンスが余っていません";
                 break;
         }
-        Error error = new Error(errorCode, errorMessage);
+        StreetPassError streetPassError = new StreetPassError(errorCode, errorMessage);
         if (onAdvertiseBleListener != null) {
-            onAdvertiseBleListener.onAdvertiseBleError(error);
+            onAdvertiseBleListener.onAdvertiseBleError(streetPassError);
         }
     }
 

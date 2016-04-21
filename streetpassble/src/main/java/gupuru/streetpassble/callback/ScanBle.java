@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.StreetPassError;
 import gupuru.streetpassble.server.BLEServer;
 
 /**
@@ -37,7 +37,7 @@ public class ScanBle extends ScanCallback {
     public interface OnScanBleListener {
         void deviceDataInfo(DeviceData deviceData);
 
-        void error(Error error);
+        void error(StreetPassError streetPassError);
     }
 
     public void setOnScanBleListener(OnScanBleListener onScanBleListener) {
@@ -78,9 +78,9 @@ public class ScanBle extends ScanCallback {
                 break;
         }
         //error callback
-        Error error = new Error(errorCode, errorMessage);
+        StreetPassError streetPassError = new StreetPassError(errorCode, errorMessage);
         if (onScanBleListener != null) {
-            onScanBleListener.error(error);
+            onScanBleListener.error(streetPassError);
         }
     }
 

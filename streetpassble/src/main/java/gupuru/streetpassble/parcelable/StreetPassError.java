@@ -3,7 +3,7 @@ package gupuru.streetpassble.parcelable;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Error implements Parcelable {
+public class StreetPassError implements Parcelable {
 
     protected int errorCode;
     protected String errorMessage;
@@ -19,23 +19,23 @@ public class Error implements Parcelable {
         out.writeString(errorMessage);
     }
 
-    public static final Parcelable.Creator<Error> CREATOR
-            = new Parcelable.Creator<Error>() {
-        public Error createFromParcel(Parcel in) {
-            return new Error(in);
+    public static final Parcelable.Creator<StreetPassError> CREATOR
+            = new Parcelable.Creator<StreetPassError>() {
+        public StreetPassError createFromParcel(Parcel in) {
+            return new StreetPassError(in);
         }
 
-        public Error[] newArray(int size) {
-            return new Error[size];
+        public StreetPassError[] newArray(int size) {
+            return new StreetPassError[size];
         }
     };
 
-    public Error(int errorCode, String errorMessage) {
+    public StreetPassError(int errorCode, String errorMessage) {
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
 
-    private Error(Parcel in) {
+    private StreetPassError(Parcel in) {
         errorCode = in.readInt();
         errorMessage = in.readString();
     }

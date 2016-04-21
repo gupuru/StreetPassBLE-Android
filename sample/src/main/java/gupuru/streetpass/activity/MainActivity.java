@@ -23,9 +23,7 @@ import android.widget.TextView;
 import gupuru.streetpass.R;
 import gupuru.streetpass.constans.Constants;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.parcelable.DeviceData;
-import gupuru.streetpassble.parcelable.StreetPassSettings;
-import gupuru.streetpassble.parcelable.TransferData;
+import gupuru.streetpassble.parcelable.*;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, StreetPassBle.OnStreetPassBleListener {
 
@@ -74,6 +72,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassBleListener(this);
+
+
+        streetPassBle.setOnStreetPassBleListener(new StreetPassBle.OnStreetPassBleListener() {
+            @Override
+            public void nearByDevices(DeviceData deviceData) {
+
+            }
+
+            @Override
+            public void error(StreetPassError streetPassError) {
+
+            }
+
+            @Override
+            public void receivedData(TransferData data) {
+
+            }
+        });
+
 
         //BLE対応端末か
         if (!streetPassBle.isBle()) {
@@ -167,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void error(gupuru.streetpassble.parcelable.Error error) {
+    public void error(StreetPassError streetPassError) {
 
     }
 

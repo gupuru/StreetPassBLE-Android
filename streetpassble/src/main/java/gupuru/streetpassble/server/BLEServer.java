@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 import gupuru.streetpassble.constants.Constants;
-import gupuru.streetpassble.parcelable.Error;
+import gupuru.streetpassble.parcelable.StreetPassError;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 import gupuru.streetpassble.parcelable.TransferData;
 
@@ -36,7 +36,7 @@ public class BLEServer extends BluetoothGattCallback {
 
         void onConnected(boolean result);
 
-        void onBLEServerError(Error error);
+        void onBLEServerError(StreetPassError streetPassError);
     }
 
     public void setOnBLEServerListener(OnBLEServerListener onBLEServerListener) {
@@ -154,8 +154,8 @@ public class BLEServer extends BluetoothGattCallback {
      * @param message
      * @return
      */
-    private Error getErrorParcelable(String message) {
-        return new Error(Constants.CODE_BLE_SERVER_ERROR, message);
+    private StreetPassError getErrorParcelable(String message) {
+        return new StreetPassError(Constants.CODE_BLE_SERVER_ERROR, message);
     }
 
     /**
