@@ -7,8 +7,11 @@
 すれ違い通信については、[こちら](https://ja.wikipedia.org/wiki/%E3%81%99%E3%82%8C%E3%81%A1%E3%81%8C%E3%81%84%E9%80%9A%E4%BF%A1)を参照してください。
 
 端末同士がすれ違った時にデータ交換します。
+
 １００バイト程度の送受信が可能です。
+
 Android SDK version 21以上かつ、multiple advertisementのHCIコマンドが使える端末でのみ使用できます。
+
 上記のことについては[こちら](http://qiita.com/eggman/items/6a13f5be7deb363c800d)の記事に詳しく書かれています。
 
 # 導入方法
