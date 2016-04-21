@@ -22,21 +22,21 @@ Gradle
 dependencies {
   compile 'com.gupuru.streetpass:streetpass:0.1.1'
 }
-
 ```
 
 # 使い方
 
 manifestに以下を追加してください。
 
-```AndroidManifest.xml
+```
 <uses-permission android:name="android.permission.BLUETOOTH" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
-```MainActivity.java
+このような形で使えます。
 
+```
 public class MainActivity extends AppCompatActivity {
 
     private StreetPassBle streetPassBle;
