@@ -4,6 +4,8 @@
 
 **すれ違い通信のAndroidライブラリ**
 
+開発中のものなので、不安定な所があります。[iOS](https://github.com/gupuru/StreetPassBLE-iOS)のほうが安定しているので、iOSで良ければ、そちらをご利用ください。
+
 すれ違い通信については、[こちら](https://ja.wikipedia.org/wiki/%E3%81%99%E3%82%8C%E3%81%A1%E3%81%8C%E3%81%84%E9%80%9A%E4%BF%A1)を参照してください。
 
 端末同士がすれ違った時にデータ交換します。
