@@ -30,7 +30,7 @@ dependencies {
 
 manifestに以下を追加してください。
 
-```
+```xml
 <uses-permission android:name="android.permission.BLUETOOTH" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -38,7 +38,7 @@ manifestに以下を追加してください。
 
 このような形で使えます。
 
-```
+```java
 public class MainActivity extends AppCompatActivity {
 
     private StreetPassBle streetPassBle;
