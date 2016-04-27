@@ -17,8 +17,6 @@ public class StreetPassSettings implements Parcelable {
     protected int scanMode;
     protected int advertiseMode;
     protected int txPowerLevel;
-    protected boolean advertiseIncludeDeviceName;
-    protected boolean advertiseIncludeTxPowerLevel;
 
     public static class Builder {
         protected String serviceUuid = Settings.SERVICE_UUID;
@@ -28,8 +26,6 @@ public class StreetPassSettings implements Parcelable {
         protected int scanMode = Settings.SCAN__MODE;
         protected int advertiseMode = Settings.ADVERTISE_MODE;
         protected int txPowerLevel = Settings.TX_POWER_LEVEL;
-        protected boolean advertiseIncludeDeviceName = Settings.ADVERTISE_INCLUDE_DEVICE_NAME;
-        protected boolean advertiseIncludeTxPowerLevel = Settings.ADVERTISE_INCLUDE_TX_POWER_LEVEL;
 
         public Builder serviceUuid(String serviceUuid) { this.serviceUuid = serviceUuid; return this; }
         public Builder writeCharacteristicUuid(String writeCharacteristicUuid) { this.writeCharacteristicUuid = writeCharacteristicUuid; return this; }
@@ -38,8 +34,6 @@ public class StreetPassSettings implements Parcelable {
         public Builder scanMode(int scanMode) { this.scanMode = scanMode; return this; }
         public Builder advertiseMode(int advertiseMode) { this.advertiseMode = advertiseMode; return this; }
         public Builder txPowerLevel(int txPowerLevel) { this.txPowerLevel = txPowerLevel; return this; }
-        public Builder advertiseIncludeDeviceName(boolean advertiseIncludeDeviceName) { this.advertiseIncludeDeviceName = advertiseIncludeDeviceName; return this; }
-        public Builder advertiseIncludeTxPowerLevel(boolean advertiseIncludeTxPowerLevel) { this.advertiseIncludeTxPowerLevel = advertiseIncludeTxPowerLevel; return this; }
 
         public StreetPassSettings build() {
             return new StreetPassSettings(this);
@@ -60,8 +54,6 @@ public class StreetPassSettings implements Parcelable {
         out.writeInt(scanMode);
         out.writeInt(advertiseMode);
         out.writeInt(txPowerLevel);
-        out.writeByte((byte) (advertiseIncludeDeviceName ? 1 : 0));
-        out.writeByte((byte) (advertiseIncludeTxPowerLevel ? 1 : 0));
     }
 
     public static final Parcelable.Creator<StreetPassSettings> CREATOR
@@ -83,8 +75,6 @@ public class StreetPassSettings implements Parcelable {
         this.scanMode = builder.scanMode;
         this.advertiseMode = builder.advertiseMode;
         this.txPowerLevel = builder.txPowerLevel;
-        this.advertiseIncludeDeviceName = builder.advertiseIncludeDeviceName;
-        this.advertiseIncludeTxPowerLevel = builder.advertiseIncludeTxPowerLevel;
     }
 
     private StreetPassSettings(Parcel in) {
@@ -95,8 +85,6 @@ public class StreetPassSettings implements Parcelable {
         scanMode = in.readInt();
         advertiseMode = in.readInt();
         txPowerLevel = in.readInt();
-        advertiseIncludeDeviceName = in.readByte() != 0;
-        advertiseIncludeTxPowerLevel = in.readByte() != 0;
     }
 
     public String getData() {
@@ -125,14 +113,6 @@ public class StreetPassSettings implements Parcelable {
 
     public int getTxPowerLevel() {
         return txPowerLevel;
-    }
-
-    public boolean isAdvertiseIncludeDeviceName() {
-        return advertiseIncludeDeviceName;
-    }
-
-    public boolean isAdvertiseIncludeTxPowerLevel() {
-        return advertiseIncludeTxPowerLevel;
     }
 
 }

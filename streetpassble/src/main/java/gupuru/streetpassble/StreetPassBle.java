@@ -239,9 +239,7 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
             // アドバタイジングデータ
             AdvertiseData advertiseData = new AdvertiseData.Builder()
                     .addServiceUuid(streetPassSettings.getServiceUuid())
-                    .addServiceData(streetPassSettings.getServiceUuid(), "android".getBytes())
-                    .setIncludeDeviceName(streetPassSettings.isAdvertiseIncludeDeviceName())
-                    .setIncludeTxPowerLevel(streetPassSettings.isAdvertiseIncludeTxPowerLevel())
+                    .addServiceData(streetPassSettings.getServiceUuid(), "".getBytes())
                     .build();
 
             advertiseBle = new AdvertiseBle();
