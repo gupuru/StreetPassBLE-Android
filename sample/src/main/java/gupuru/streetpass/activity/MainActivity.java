@@ -23,7 +23,10 @@ import android.widget.TextView;
 import gupuru.streetpass.R;
 import gupuru.streetpass.constans.Constants;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.parcelable.*;
+import gupuru.streetpassble.parcelable.DeviceData;
+import gupuru.streetpassble.parcelable.StreetPassError;
+import gupuru.streetpassble.parcelable.StreetPassSettings;
+import gupuru.streetpassble.parcelable.TransferData;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, StreetPassBle.OnStreetPassBleListener {
 
@@ -156,9 +159,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                                 .scanMode(ScanSettings.SCAN_MODE_LOW_POWER)
                                 .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
-                                .advertiseIncludeDeviceName(true)
-                                .advertiseIncludeTxPowerLevel(true)
                                 .serviceUuid(Constants.SERVICE_UUID)
+                                .readCharacteristicUuid(Constants.READ_CHARACTERISTIC_UUID)
+                                .writeCharacteristicUuid(Constants.WRITE_CHARACTERISTIC_UUID)
                                 .data(sendData)
                                 .build();
 
