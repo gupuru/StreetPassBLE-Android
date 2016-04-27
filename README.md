@@ -22,7 +22,7 @@ Gradle
 
 ```
 dependencies {
-  compile 'com.gupuru.streetpass:streetpass:0.1.1'
+  compile 'com.gupuru.streetpass:streetpass:0.1.2'
 }
 ```
 
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
               //受信データ
             }
         });
+        streetPassBle.start();
     }
 
     @Override
