@@ -22,7 +22,7 @@ Gradle
 
 ```
 dependencies {
-  compile 'com.gupuru.streetpass:streetpass:0.1.2'
+  compile 'com.gupuru.streetpass:streetpass:0.1.3'
 }
 ```
 
@@ -36,7 +36,7 @@ manifestに以下を追加してください。
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
-このような形で使えます。
+そして、このような形で使います。
 
 ```java
 public class MainActivity extends AppCompatActivity {
