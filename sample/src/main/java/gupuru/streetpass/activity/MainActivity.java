@@ -96,9 +96,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         //BLE対応端末か
-        if (!streetPassBle.isBle()) {
+        if (!streetPassBle.isStreetPassBle()) {
             //非対応
             startStopBtn.setVisibility(View.GONE);
+            editText.setVisibility(View.GONE);
             logTextView.setText(getString(R.string.incompatible_street_pass));
         }
 
