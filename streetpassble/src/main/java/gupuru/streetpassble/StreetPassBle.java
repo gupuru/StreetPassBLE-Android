@@ -405,7 +405,11 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
      * @return
      */
     public boolean isBle() {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+        try {
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -414,7 +418,11 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
      * @return
      */
     public boolean isOnBluetooth() {
-        return BluetoothAdapter.getDefaultAdapter().isEnabled();
+        try {
+            return BluetoothAdapter.getDefaultAdapter().isEnabled();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -423,7 +431,11 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
      * @return
      */
     public boolean isAdvertise() {
-        return (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported());
+        try {
+            return (BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
