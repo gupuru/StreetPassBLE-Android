@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
-        
+
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassBleListener(this);
 
