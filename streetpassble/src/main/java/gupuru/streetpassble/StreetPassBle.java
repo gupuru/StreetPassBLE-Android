@@ -14,6 +14,8 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +38,7 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
         BLEGattServer.OnBLEGattServerListener {
 
     private Context context;
+    private Handler handler;
     private OnStreetPassBleListener onStreetPassBleListener;
     private OnStreetPassBleServerListener onStreetPassBleServerListener;
 
@@ -64,8 +67,6 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     }
 
     public interface OnStreetPassBleListener {
-        void nearByDevices(DeviceData deviceData);
-
         void error(StreetPassError streetPassError);
 
         void receivedData(TransferData data);
@@ -276,19 +277,24 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     //region scan callback
 
     @Override
-    public void deviceDataInfo(DeviceData deviceData) {
-        if (onStreetPassBleListener != null) {
-            onStreetPassBleListener.nearByDevices(deviceData);
-        }
+    public void deviceDataInfo(final DeviceData deviceData) {
         if (onStreetPassBleServerListener != null) {
             onStreetPassBleServerListener.onScanCallbackDeviceDataInfo(deviceData);
         }
     }
 
     @Override
-    public void error(StreetPassError streetPassError) {
+    public void error(final StreetPassError streetPassError) {
         if (onStreetPassBleListener != null) {
-            onStreetPassBleListener.error(streetPassError);
+            if (handler == null) {
+                handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onStreetPassBleListener.error(streetPassError);
+                    }
+                });
+            }
         }
         if (onStreetPassBleServerListener != null) {
             onStreetPassBleServerListener.onScanCallbackError(streetPassError);
@@ -370,9 +376,17 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
     }
 
     @Override
-    public void onCharacteristicWriteRequest(TransferData data) {
+    public void onCharacteristicWriteRequest(final TransferData data) {
         if (onStreetPassBleListener != null) {
-            onStreetPassBleListener.receivedData(data);
+            if (handler == null) {
+                handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onStreetPassBleListener.receivedData(data);
+                    }
+                });
+            }
         }
         if (onStreetPassBleServerListener != null) {
             onStreetPassBleServerListener.onBLEGattServerCharacteristicWriteRequest(data);

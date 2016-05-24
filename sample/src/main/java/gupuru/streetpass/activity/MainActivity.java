@@ -23,7 +23,6 @@ import android.widget.TextView;
 import gupuru.streetpass.R;
 import gupuru.streetpass.constans.Constants;
 import gupuru.streetpassble.StreetPassBle;
-import gupuru.streetpassble.parcelable.DeviceData;
 import gupuru.streetpassble.parcelable.StreetPassError;
 import gupuru.streetpassble.parcelable.StreetPassSettings;
 import gupuru.streetpassble.parcelable.TransferData;
@@ -75,25 +74,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassBleListener(this);
-
-
-        streetPassBle.setOnStreetPassBleListener(new StreetPassBle.OnStreetPassBleListener() {
-            @Override
-            public void nearByDevices(DeviceData deviceData) {
-
-            }
-
-            @Override
-            public void error(StreetPassError streetPassError) {
-
-            }
-
-            @Override
-            public void receivedData(TransferData data) {
-
-            }
-        });
-
 
         //BLE対応端末か
         if (!streetPassBle.isStreetPassBle()) {
@@ -158,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         StreetPassSettings streetPassSettings
                                 = new StreetPassSettings.Builder()
                                 .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
-                                .scanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                                .scanMode(ScanSettings.SCAN_MODE_BALANCED)
                                 .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
                                 .serviceUuid(Constants.SERVICE_UUID)
                                 .readCharacteristicUuid(Constants.READ_CHARACTERISTIC_UUID)
@@ -181,21 +161,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    @Override
-    public void nearByDevices(DeviceData deviceData) {
-        setStatusText(deviceData.getDeviceName());
-    }
-
     @Override
     public void error(StreetPassError streetPassError) {
-
+        setStatusText("error", streetPassError.getErrorMessage());
     }
 
     @SuppressLint("SetTextI18n")
     @Override
     public void receivedData(final TransferData data) {
-        setStatusText(data.getData());
+        setStatusText("receivedData", data.getData());
     }
 
     /**
@@ -217,14 +191,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      *
      * @param data
      */
-    private void setStatusText(final String data) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                logTextView.setText(
-                        getString(R.string.street_pass_status, logTextView.getText(), data)
-                );
-            }
-        });
+    private void setStatusText(final String interfaceName, final String data) {
+        logTextView.setText(
+                getString(R.string.street_pass_status, logTextView.getText(),
+                        getString(R.string.street_pass_interface_status,
+                                interfaceName, data)
+                )
+        );
     }
 
 }

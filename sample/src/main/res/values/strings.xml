@@ -12,6 +12,7 @@
     <string name="incompatible_street_pass">This smart phone is incompatible StreetPass.</string>
     <string name="alert_positive_button">OK</string>
     <string name="street_pass_status">%1$s\n%2$s</string>
+    <string name="street_pass_interface_status">%1$s: %2$s</string>
     <string name="caution_title">Caution</string>
     <string name="caution_message">Please input data.</string>
 
