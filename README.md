@@ -2,33 +2,38 @@
 
 # StreetPassBLE すれ違い通信
 
-**すれ違い通信のAndroidライブラリ**
+**Android's StreetPass Communication library**
 
-開発中のものなので、不安定な所があります。[iOS](https://github.com/gupuru/StreetPassBLE-iOS)のほうが安定しているので、iOSで良ければ、そちらをご利用ください。
+## Caution
 
-すれ違い通信については、[こちら](https://ja.wikipedia.org/wiki/%E3%81%99%E3%82%8C%E3%81%A1%E3%81%8C%E3%81%84%E9%80%9A%E4%BF%A1)を参照してください。
+This library is developing now.
+[iOS's StreetPass library](https://github.com/gupuru/StreetPassBLE-iOS) is stable.If you use the iOS, Please use the iOS's StreetPass library.
 
-端末同士がすれ違った時にデータ交換します。
+## What is StreetPass Communication?
 
-１００バイト程度の送受信が可能です。
+StreetPass is a Nintendo 3DS functionality which allows passive communication between Nintendo 3DS systems held by users in close proximity, an example being the sharing of Mii avatars in the StreetPass Mii Plaza application, and other game data. New data received from StreetPass is indicated via a green status light on the system.
 
-Android SDK version 21以上かつ、multiple advertisementのHCIコマンドが使える端末でのみ使用できます。
+[Wiki](https://en.wikipedia.org/wiki/SpotPass_and_StreetPass)
 
-上記のことについては[こちら](http://qiita.com/eggman/items/6a13f5be7deb363c800d)の記事に詳しく書かれています。
+## About this library
 
-# 導入方法
+When the terminal with each other has become close to, it is capable of transmitting and receiving data of about 100 bytes.
 
-Gradle
+Android SDK version 21 or higher and SmartPhone can use HCI command of multiple advertisement.
+
+## Installation
+
+Gradle:
 
 ```
 dependencies {
-  compile 'com.gupuru.streetpass:streetpass:0.1.3'
+  compile 'com.gupuru.streetpass:streetpass:0.1.4'
 }
 ```
 
-# 使い方
+## Usage
 
-manifestに以下を追加してください。
+Please add the following to the `manifest`.
 
 ```xml
 <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -36,7 +41,54 @@ manifestに以下を追加してください。
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
-そして、このような形で使います。
+### Start StreetPass
+
+```java
+new StreetPassBle(this).start();
+```
+
+### Settings
+
+```java
+StreetPassSettings streetPassSettings
+  = new StreetPassSettings.Builder()
+        .advertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+        .scanMode(ScanSettings.SCAN_MODE_BALANCED)
+        .txPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+        .build();
+
+new StreetPassBle(this).start(streetPassSettings);
+```
+
+### Stop StreetPass
+
+Please stop sure.
+
+```java
+new StreetPassBle(this).stop();
+```
+
+### Callbacks
+
+Received data.
+
+```java
+@Override
+public void receivedData(final TransferData data) {
+    Log.d("receivedData", data.getData());
+}
+```
+
+Error
+
+```java
+@Override
+public void error(StreetPassError streetPassError) {
+    Log.d("error", streetPassError.getErrorMessage());
+}
+```
+
+### Sample
 
 ```java
 public class MainActivity extends AppCompatActivity {
@@ -50,11 +102,6 @@ public class MainActivity extends AppCompatActivity {
 
         streetPassBle = new StreetPassBle(MainActivity.this);
         streetPassBle.setOnStreetPassBleListener(new StreetPassBle.OnStreetPassBleListener() {
-            @Override
-            public void nearByDevices(DeviceData deviceData) {
-                //近くの端末
-            }
-
             @Override
             public void error(StreetPassError streetPassError) {
               //エラー
