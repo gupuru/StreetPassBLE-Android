@@ -27,7 +27,7 @@ Gradle:
 
 ```
 dependencies {
-  compile 'com.gupuru.streetpass:streetpass:0.1.4'
+  compile 'com.gupuru.streetpass:streetpass:0.1.5'
 }
 ```
 
