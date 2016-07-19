@@ -9,7 +9,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 23
         versionCode 5
-        versionName "0.1.4"
+        versionName "0.1.5"
     }
     buildTypes {
         release {
@@ -28,7 +28,7 @@ publish {
     userOrg = 'gupuru'
     groupId = 'com.gupuru.streetpass'
     artifactId = 'streetpass'
-    publishVersion = '0.1.4'
+    publishVersion = '0.1.5'
     desc = 'street pass communication for android'
     website = 'https://github.com/gupuru/StreetPassBLE'
     licences = ['MIT']

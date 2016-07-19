@@ -191,10 +191,12 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
 
         bleGattServer = new BLEGattServer(streetPassSettings.getData());
         gattServer = bluetoothManager.openGattServer(context, bleGattServer);
-        bleGattServer.setBluetoothGattServer(gattServer);
-        bleGattServer.setOnBLEGattServerListener(this);
-
-        gattServer.addService(service);
+        if (gattServer != null) {
+            bleGattServer.setBluetoothGattServer(gattServer);
+            bleGattServer.setOnBLEGattServerListener(this);
+            //gattServerに追加
+            gattServer.addService(service);
+        }
     }
 
     /**
@@ -255,10 +257,14 @@ public class StreetPassBle implements ScanBle.OnScanBleListener,
      * scan停止
      */
     private void stopScan() {
-        if (scanBle != null && bluetoothLeScanner != null) {
-            bluetoothLeScanner.stopScan(scanBle);
-            bluetoothLeScanner = null;
-            scanBle = null;
+        try {
+            if (scanBle != null && bluetoothLeScanner != null) {
+                bluetoothLeScanner.stopScan(scanBle);
+                bluetoothLeScanner = null;
+                scanBle = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
